@@ -62,6 +62,8 @@ def _prepare_for_shell_task(task: dict, inputs: dict) -> dict:
     missing_outputs = task_outputs.difference(default_outputs)
     inputs["outputs"] = list(missing_outputs)
     # Workaround ends here
+    # NOTE: Hardcoded for now, possibly make user-facing option
+    inputs["metadata"]["options"]["use_symlinks"] = True
 
     return inputs
 
