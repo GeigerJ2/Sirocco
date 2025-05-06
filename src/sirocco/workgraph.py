@@ -335,9 +335,8 @@ class AiidaWorkGraph:
         """set AiiDA ShellJob filenames for AvailableData entities"""
 
         filenames = {}
-
         for input_ in task.input_data_nodes():
-            if isinstance(input_, core.AvailableData):
+            if isinstance(input_, core.AvailableData) and task.computer and input_.computer:
                 filenames[input_.name] = Path(input_.src).name
 
         workgraph_task = self.task_from_core(task)

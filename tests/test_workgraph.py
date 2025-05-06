@@ -1,10 +1,13 @@
-from sirocco.core import Workflow
+import pytest
 from aiida import orm
+
+from sirocco.core import Workflow
 from sirocco.parsing import yaml_data_models as models
 from sirocco.workgraph import AiidaWorkGraph
 
 
-def test_set_shelljob_filenames(tmp_path, aiida_localhost):
+@pytest.mark.usefixtures("aiida_localhost")
+def test_set_shelljob_filenames(tmp_path):
     file_name = "foo.txt"
     file_path = tmp_path / file_name
     # Dummy script, as `src` must be specified due to relative command path
@@ -19,17 +22,13 @@ def test_set_shelljob_filenames(tmp_path, aiida_localhost):
                 tasks=[
                     models.ConfigCycleTask(
                         name="task",
-                        inputs=[
-                            models.ConfigCycleTaskInput(name="my_data", port="unused")
-                        ],
+                        inputs=[models.ConfigCycleTaskInput(name="my_data", port="unused")],
                     ),
                 ],
             ),
         ],
         tasks=[
-            models.ConfigShellTask(
-                name="task", command="echo test", src=str(script_path)
-            ),
+            models.ConfigShellTask(name="task", command="echo test", src=str(script_path)),
         ],
         data=models.ConfigData(
             available=[
@@ -46,13 +45,14 @@ def test_set_shelljob_filenames(tmp_path, aiida_localhost):
 
     core_wf = Workflow.from_config_workflow(config_workflow=config_wf)
     aiida_wf = AiidaWorkGraph(core_workflow=core_wf)
-    assert isinstance(
-        aiida_wf._workgraph.tasks[0].inputs.nodes["my_data"].value, orm.RemoteData
-    )
-    assert aiida_wf._workgraph.tasks[0].inputs.filenames.value == {"my_data": "foo.txt"}
+    remote_data = aiida_wf._workgraph.tasks[0].inputs.nodes["my_data"].value  # noqa: SLF001
+    assert isinstance(remote_data, orm.RemoteData)
+    filenames = aiida_wf._workgraph.tasks[0].inputs.filenames.value  # noqa: SLF001
+    assert filenames == {"my_data": "foo.txt"}
 
 
-def test_multiple_inputs_filenames(tmp_path, aiida_localhost):
+@pytest.mark.usefixtures("aiida_localhost")
+def test_multiple_inputs_filenames(tmp_path):
     file_names = ["foo.txt", "bar.txt", "baz.dat"]
     for name in file_names:
         (tmp_path / name).touch()
@@ -69,9 +69,7 @@ def test_multiple_inputs_filenames(tmp_path, aiida_localhost):
                     models.ConfigCycleTask(
                         name="task",
                         inputs=[
-                            models.ConfigCycleTaskInput(
-                                name=f"data_{i}", port=f"port_{i}"
-                            )
+                            models.ConfigCycleTaskInput(name=f"data_{i}", port=f"port_{i}")
                             for i in range(len(file_names))
                         ],
                     ),
@@ -79,9 +77,7 @@ def test_multiple_inputs_filenames(tmp_path, aiida_localhost):
             ),
         ],
         tasks=[
-            models.ConfigShellTask(
-                name="task", command="echo test", src=str(script_path)
-            ),
+            models.ConfigShellTask(name="task", command="echo test", src=str(script_path)),
         ],
         data=models.ConfigData(
             available=[
@@ -101,10 +97,12 @@ def test_multiple_inputs_filenames(tmp_path, aiida_localhost):
     aiida_wf = AiidaWorkGraph(core_workflow=core_wf)
 
     expected_filenames = {f"data_{i}": name for i, name in enumerate(file_names)}
-    assert aiida_wf._workgraph.tasks[0].inputs.filenames.value == expected_filenames
+    filenames = aiida_wf._workgraph.tasks[0].inputs.filenames.value  # noqa: SLF001
+    assert filenames == expected_filenames
 
 
-def test_directory_input_filenames(tmp_path, aiida_localhost):
+@pytest.mark.usefixtures("aiida_localhost")
+def test_directory_input_filenames(tmp_path):
     dir_name = "test_dir"
     dir_path = tmp_path / dir_name
     dir_path.mkdir()
@@ -119,17 +117,13 @@ def test_directory_input_filenames(tmp_path, aiida_localhost):
                 tasks=[
                     models.ConfigCycleTask(
                         name="task",
-                        inputs=[
-                            models.ConfigCycleTaskInput(name="my_dir", port="unused")
-                        ],
+                        inputs=[models.ConfigCycleTaskInput(name="my_dir", port="unused")],
                     ),
                 ],
             ),
         ],
         tasks=[
-            models.ConfigShellTask(
-                name="task", command="echo test", src=str(script_path)
-            ),
+            models.ConfigShellTask(name="task", command="echo test", src=str(script_path)),
         ],
         data=models.ConfigData(
             available=[
@@ -147,4 +141,5 @@ def test_directory_input_filenames(tmp_path, aiida_localhost):
     core_wf = Workflow.from_config_workflow(config_workflow=config_wf)
     aiida_wf = AiidaWorkGraph(core_workflow=core_wf)
 
-    assert aiida_wf._workgraph.tasks[0].inputs.filenames.value == {"my_dir": dir_name}
+    filenames = aiida_wf._workgraph.tasks[0].inputs.filenames.value  # noqa: SLF001
+    assert filenames == {"my_dir": dir_name}
