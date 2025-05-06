@@ -279,7 +279,14 @@ class ConfigShellTaskSpecs:
     plugin: ClassVar[Literal["shell"]] = "shell"
     port_pattern: ClassVar[re.Pattern] = field(default=re.compile(r"{PORT(\[sep=.+\])?::(.+?)}"), repr=False)
     sep_pattern: ClassVar[re.Pattern] = field(default=re.compile(r"\[sep=(.+)\]"), repr=False)
-    src: str | None = None
+    src: str | None = Field(
+        default=None,
+        description=(
+            "If `src` not absolute, this ends up to be relative to the root directory of the config file."
+            "This should also be solved by registering `Code`s in AiiDA for the required scripts."
+            "See issue #127 and #60"
+        ),
+    )
     command: str
     env_source_files: list[str] = field(default_factory=list)
 
