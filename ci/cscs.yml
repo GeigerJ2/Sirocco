@@ -13,9 +13,6 @@ stages:
 build_job:
   stage: build
   extends: .baremetal-runner-daint-gh200
-  variables:
-    FIRECREST_CLIENT_SECRET: 'test'
-    FIRECREST_CLIENT_ID: 'test'
   script: hostname
     #   - apt-get update -y && apt-get install -y --no-install-recommends graphviz graphviz-dev rabbitmq-server
     # - pip install --upgrade pip
