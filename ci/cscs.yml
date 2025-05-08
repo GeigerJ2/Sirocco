@@ -15,20 +15,19 @@ variables:
 
 # YAML anchor for common tool setup (Graphviz, pip, hatch)
 # This script block is run before the main 'script' in jobs that use it.
-.common_tool_setup: &common_tool_setup
-  before_script:
+# .common_tool_setup: &common_tool_setup
+#   before_script:
     # Update package list and install Graphviz system dependencies
     # '--no-install-recommends' reduces unnecessary packages
-    - apt-get update -y && apt-get install -y --no-install-recommends graphviz graphviz-dev rabbitmq-server
-    - pip install --upgrade pip
-    - pip install hatch
 
 # Do we even need a Dockerfile for this? Which OS are the runners
 build_job:
   stage: build
-  extends: .baremetal-runner-cscs-zen2 # This should be defined in the included remote file
-  # variables:
-  #   DOCKERFILE: ci/docker/Dockerfile.build # Path to your Dockerfile
+  extends: .baremetal-runner-daint-gh200
+  script: hostname
+    #   - apt-get update -y && apt-get install -y --no-install-recommends graphviz graphviz-dev rabbitmq-server
+    # - pip install --upgrade pip
+    # - pip install hatch
 
 # build_job:
 #   extends: .f7t-controller
