@@ -10,8 +10,8 @@ stages:
   - test
 
 # Global variable image name
-variables:
-  PERSIST_IMAGE_NAME: $CSCS_REGISTRY_PATH/helloworld:$CI_COMMIT_SHORT_SHA
+# variables:
+#   PERSIST_IMAGE_NAME: $CSCS_REGISTRY_PATH/helloworld:$CI_COMMIT_SHORT_SHA
 
 # YAML anchor for common tool setup (Graphviz, pip, hatch)
 # This script block is run before the main 'script' in jobs that use it.
@@ -28,28 +28,17 @@ build_job:
     #   - apt-get update -y && apt-get install -y --no-install-recommends graphviz graphviz-dev rabbitmq-server
     # - pip install --upgrade pip
     # - pip install hatch
+    # - pip install .
+    # - verdi presto --profile-name "ci"
 
-# build_job:
-#   extends: .f7t-controller
-#   script:
-#     - CLUSTER=eiger
-#     - SUBMISSION="$(firecrest submit --system $CLUSTER --account $CSCS_CI_DEFAULT_SLURM_ACCOUNT script.sh)"
-#     - JOBID=$(echo "$SUBMISSION" | grep "jobid" | sed -e 's/.*jobid[^0-9]*\([0-9]\+\),/\1/')
-#     - |
-#       while firecrest poll-active --raw --system $CLUSTER | grep $JOBID ; do
-#         echo "job is still in queue/running"
-#         sleep 30
-#       done
-
-# Test job: Runs tests across multiple Python versions
-Run tests:
-  stage: test
-  timeout: 10 minutes # Job timeout
-  # Define the matrix for Python versions.
-  # The job will be run once for each Python version specified.
-  parallel:
-    matrix:
-      - PYTHON_VERSION: ["3.12"]
+# Run tests:
+#   stage: test
+#   timeout: 10 minutes
+#   # Define the matrix for Python versions.
+#   # The job will be run once for each Python version specified.
+#   parallel:
+#     matrix:
+#       - PYTHON_VERSION: ["3.12"]
       # - PYTHON_VERSION: ["3.10", "3.11", "3.12", "3.13"]
 
   # Use a specific Python Docker image based on the matrix variable.
@@ -57,17 +46,17 @@ Run tests:
   # image: python:${PYTHON_VERSION}-slim
 
   # Variables specific to this job
-  variables:
-    PYTEST_ADDOPTS: "--durations=0" # Additional options for pytest
+  # variables:
+  #   PYTEST_ADDOPTS: "--durations=0" # Additional options for pytest
 
   # Inherit and run common tool setup
   # <<: *common_tool_setup
 
   # Main script for the test job
-  script:
+  # script:
     # Install the current package and its dependencies
-    - pip install .
-    - verdi presto --profile-name "ci"
+    # - pip install .
+    # - verdi presto --profile-name "ci"
     # Run the test suite using hatch.
     # - hatch test -m "" --parallel --cover
 
