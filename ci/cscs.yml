@@ -13,13 +13,6 @@ stages:
 variables:
   PERSIST_IMAGE_NAME: $CSCS_REGISTRY_PATH/helloworld:$CI_COMMIT_SHORT_SHA
 
-# NOTE: This is probably not needed, as the event is defined via the webhook/CSCS setup
-# YAML anchor for common rules: trigger on push to default branch (main) or merge requests
-# .common_rules: &common_rules
-#   rules:
-#     - if: $CI_PIPELINE_SOURCE == "merge_request_event" # Trigger for all merge requests
-#     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH   # Trigger for pushes to the default branch (e.g., main)
-
 # YAML anchor for common tool setup (Graphviz, pip, hatch)
 # This script block is run before the main 'script' in jobs that use it.
 .common_tool_setup: &common_tool_setup
@@ -33,16 +26,26 @@ variables:
 # Do we even need a Dockerfile for this? Which OS are the runners
 build_job:
   stage: build
-  extends: .container-builder-cscs-zen2 # This should be defined in the included remote file
+  extends: .baremetal-runner-cscs-zen2 # This should be defined in the included remote file
   # variables:
   #   DOCKERFILE: ci/docker/Dockerfile.build # Path to your Dockerfile
 
+# build_job:
+#   extends: .f7t-controller
+#   script:
+#     - CLUSTER=eiger
+#     - SUBMISSION="$(firecrest submit --system $CLUSTER --account $CSCS_CI_DEFAULT_SLURM_ACCOUNT script.sh)"
+#     - JOBID=$(echo "$SUBMISSION" | grep "jobid" | sed -e 's/.*jobid[^0-9]*\([0-9]\+\),/\1/')
+#     - |
+#       while firecrest poll-active --raw --system $CLUSTER | grep $JOBID ; do
+#         echo "job is still in queue/running"
+#         sleep 30
+#       done
+
 # Test job: Runs tests across multiple Python versions
-test_job:
+Run tests:
   stage: test
   timeout: 10 minutes # Job timeout
-  # rules:
-  #   - !reference [.common_rules, rules] # Apply common trigger rules
   # Define the matrix for Python versions.
   # The job will be run once for each Python version specified.
   parallel:
@@ -52,7 +55,7 @@ test_job:
 
   # Use a specific Python Docker image based on the matrix variable.
   # The '-slim' variant is smaller and often preferred for CI.
-  image: python:${PYTHON_VERSION}-slim
+  # image: python:${PYTHON_VERSION}-slim
 
   # Variables specific to this job
   variables:
