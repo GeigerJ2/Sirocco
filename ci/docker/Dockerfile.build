@@ -1,12 +1,4 @@
 FROM ubuntu:22.04 as builder
 
 
-RUN apt-get update \
-  && env DEBIAN_FRONTEND=noninteractive TZ=Europe/Zurich apt-get -yqq install --no-install-recommends build-essential cmake \
-  && mkdir -p /helloworld/build \
-  && cd /helloworld/build \
-  && cmake -DCMAKE_INSTALL_PREFIX=/opt/hello ../src \
-  && make -j$(cat /proc/cpuinfo | grep '^processor' | wc -l) install \
-  && make install
-
-
+RUN echo "test"
