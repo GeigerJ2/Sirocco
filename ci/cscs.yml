@@ -61,7 +61,7 @@ Run tests:
     PYTEST_ADDOPTS: "--durations=0" # Additional options for pytest
 
   # Inherit and run common tool setup
-  <<: *common_tool_setup
+  # <<: *common_tool_setup
 
   # Main script for the test job
   script:
