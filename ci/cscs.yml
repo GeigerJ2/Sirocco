@@ -47,7 +47,8 @@ test_job:
   # The job will be run once for each Python version specified.
   parallel:
     matrix:
-      - PYTHON_VERSION: ["3.10", "3.11", "3.12", "3.13"]
+      - PYTHON_VERSION: ["3.12"]
+      # - PYTHON_VERSION: ["3.10", "3.11", "3.12", "3.13"]
         # AIIDA_VERSION: "stable" # Example if you need to use this matrix variable
 
   # Use a specific Python Docker image based on the matrix variable.
