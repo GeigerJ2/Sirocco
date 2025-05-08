@@ -28,7 +28,7 @@ def test_set_shelljob_filenames(tmp_path):
             ),
         ],
         tasks=[
-            models.ConfigShellTask(name="task", command="echo test", src=str(script_path)),
+            models.ConfigShellTask(name="task", command="echo test", src=str(script_path), computer='localhost'),
         ],
         data=models.ConfigData(
             available=[
@@ -77,7 +77,7 @@ def test_multiple_inputs_filenames(tmp_path):
             ),
         ],
         tasks=[
-            models.ConfigShellTask(name="task", command="echo test", src=str(script_path)),
+            models.ConfigShellTask(name="task", command="echo test", src=str(script_path), computer='localhost'),
         ],
         data=models.ConfigData(
             available=[
@@ -123,7 +123,7 @@ def test_directory_input_filenames(tmp_path):
             ),
         ],
         tasks=[
-            models.ConfigShellTask(name="task", command="echo test", src=str(script_path)),
+            models.ConfigShellTask(name="task", command="echo test", src=str(script_path), computer='localhost'),
         ],
         data=models.ConfigData(
             available=[
