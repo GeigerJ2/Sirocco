@@ -6,7 +6,7 @@ include:
 # Defines the stages for the CI/CD pipeline
 # Jobs in earlier stages are run before jobs in later stages.
 stages:
-  # - build
+  - build
   - test
 
 # Global variable image name
@@ -31,11 +31,11 @@ variables:
     - pip install hatch
 
 # Do we even need a Dockerfile for this? Which OS are the runners
-# build_job:
-#   stage: build
-#   extends: .container-builder-cscs-zen2 # This should be defined in the included remote file
-#   variables:
-#     DOCKERFILE: ci/docker/Dockerfile.build # Path to your Dockerfile
+build_job:
+  stage: build
+  extends: .container-builder-cscs-zen2 # This should be defined in the included remote file
+  # variables:
+  #   DOCKERFILE: ci/docker/Dockerfile.build # Path to your Dockerfile
 
 # Test job: Runs tests across multiple Python versions
 test_job:
