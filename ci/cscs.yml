@@ -7,18 +7,7 @@ include:
 # Jobs in earlier stages are run before jobs in later stages.
 stages:
   - build
-  - test
-
-# Global variable image name
-# variables:
-#   PERSIST_IMAGE_NAME: $CSCS_REGISTRY_PATH/helloworld:$CI_COMMIT_SHORT_SHA
-
-# YAML anchor for common tool setup (Graphviz, pip, hatch)
-# This script block is run before the main 'script' in jobs that use it.
-# .common_tool_setup: &common_tool_setup
-#   before_script:
-    # Update package list and install Graphviz system dependencies
-    # '--no-install-recommends' reduces unnecessary packages
+  # - test
 
 # Do we even need a Dockerfile for this? Which OS are the runners
 build_job:
@@ -30,45 +19,3 @@ build_job:
     # - pip install hatch
     # - pip install .
     # - verdi presto --profile-name "ci"
-
-# Run tests:
-#   stage: test
-#   timeout: 10 minutes
-#   # Define the matrix for Python versions.
-#   # The job will be run once for each Python version specified.
-#   parallel:
-#     matrix:
-#       - PYTHON_VERSION: ["3.12"]
-      # - PYTHON_VERSION: ["3.10", "3.11", "3.12", "3.13"]
-
-  # Use a specific Python Docker image based on the matrix variable.
-  # The '-slim' variant is smaller and often preferred for CI.
-  # image: python:${PYTHON_VERSION}-slim
-
-  # Variables specific to this job
-  # variables:
-  #   PYTEST_ADDOPTS: "--durations=0" # Additional options for pytest
-
-  # Inherit and run common tool setup
-  # <<: *common_tool_setup
-
-  # Main script for the test job
-  # script:
-    # Install the current package and its dependencies
-    # - pip install .
-    # - verdi presto --profile-name "ci"
-    # Run the test suite using hatch.
-    # - hatch test -m "" --parallel --cover
-
-
-  # Cache dependencies to speed up subsequent pipelines
-  # cache:
-  #   key:
-  #     # Cache key depends on the Python version and the content of pyproject.toml
-  #     files:
-  #       - pyproject.toml
-  #     prefix: ${CI_JOB_NAME}-${PYTHON_VERSION} # Prefix with job name and Python version
-  #   paths:
-  #     - .hatch       # Cache hatch environments
-  #     - .cache/pip   # Cache downloaded pip packages
-  #   policy: pull-push # Pull cache at start, push at end on success
