@@ -16,6 +16,6 @@ build_job:
   script: hostname
     #   - apt-get update -y && apt-get install -y --no-install-recommends graphviz graphviz-dev rabbitmq-server
     # - pip install --upgrade pip
-    - pip install hatch
+    # - pip install hatch
     # - pip install .
     # - verdi presto --profile-name "ci"
