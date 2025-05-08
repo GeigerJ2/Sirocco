@@ -1,4 +1,5 @@
 # Include external CI template from CSCS
+# TODO: Possibly 
 include:
   - remote: 'https://gitlab.com/cscs-ci/recipes/-/raw/master/templates/v2/.ci-ext.yml'
 
@@ -8,10 +9,11 @@ stages:
   # - build
   - test
 
-# Global variables, including the one from your example.
+# Global variable image name
 variables:
   PERSIST_IMAGE_NAME: $CSCS_REGISTRY_PATH/helloworld:$CI_COMMIT_SHORT_SHA
 
+# NOTE: This is probably not needed, as the event is defined via the webhook/CSCS setup
 # YAML anchor for common rules: trigger on push to default branch (main) or merge requests
 # .common_rules: &common_rules
 #   rules:
@@ -25,12 +27,10 @@ variables:
     # Update package list and install Graphviz system dependencies
     # '--no-install-recommends' reduces unnecessary packages
     - apt-get update -y && apt-get install -y --no-install-recommends graphviz graphviz-dev rabbitmq-server
-    # Upgrade pip to the latest version
     - pip install --upgrade pip
-    # Install hatch, the Python project manager
     - pip install hatch
 
-# New build job from your example
+# Do we even need a Dockerfile for this? Which OS are the runners
 # build_job:
 #   stage: build
 #   extends: .container-builder-cscs-zen2 # This should be defined in the included remote file
@@ -40,7 +40,7 @@ variables:
 # Test job: Runs tests across multiple Python versions
 test_job:
   stage: test
-  timeout: 30 minutes # Job timeout
+  timeout: 10 minutes # Job timeout
   # rules:
   #   - !reference [.common_rules, rules] # Apply common trigger rules
   # Define the matrix for Python versions.
@@ -49,7 +49,6 @@ test_job:
     matrix:
       - PYTHON_VERSION: ["3.12"]
       # - PYTHON_VERSION: ["3.10", "3.11", "3.12", "3.13"]
-        # AIIDA_VERSION: "stable" # Example if you need to use this matrix variable
 
   # Use a specific Python Docker image based on the matrix variable.
   # The '-slim' variant is smaller and often preferred for CI.
@@ -66,7 +65,6 @@ test_job:
   script:
     # Install the current package and its dependencies
     - pip install .
-    # 'verdi presto' is a command from the original workflow, assumed to be project-specific setup
     - verdi presto --profile-name "ci"
     # Run the test suite using hatch.
     # - hatch test -m "" --parallel --cover
