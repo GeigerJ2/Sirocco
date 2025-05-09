@@ -266,6 +266,8 @@ def test_set_shelljob_filenames_parametrized(tmp_path):
     aiida_wf = AiidaWorkGraph(core_workflow=core_wf)
     filenames_list = [task.inputs.filenames.value for task in aiida_wf._workgraph.tasks]
     arguments_list = [task.inputs.arguments.value for task in aiida_wf._workgraph.tasks]
+    import ipdb; ipdb.set_trace()
+    nodes_list = [list(task.inputs.nodes._sockets.keys()) for task in aiida_wf._workgraph.tasks]
     expected_filenames_list = [
         {"forcing": "forcing", "initial_conditions": "initial_conditions"},
         {"forcing": "forcing", "initial_conditions": "initial_conditions"},
