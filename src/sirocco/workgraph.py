@@ -336,8 +336,20 @@ class AiidaWorkGraph:
 
         filenames = {}
         for input_ in task.input_data_nodes():
-            if isinstance(input_, core.AvailableData) and task.computer and input_.computer:
-                filenames[input_.name] = Path(input_.src).name
+            if task.computer and input_.computer and isinstance(input_, core.AvailableData):
+                filename = Path(input_.src).name
+                filenames[input_.name] = filename
+            # NOTE: GeneratedData has no explicit Computer attribute
+            elif task.computer and isinstance(input_, core.GeneratedData):
+                for input_k, input_v in task.inputs.items():
+                    if not input_v:
+                        continue
+                    if input_ == input_v[0]:
+                        filename = self.label_placeholder(input_).strip('{').strip('}')
+                        if input_k == "None":
+                            filenames[input_.src] = filename
+                        else:
+                            filenames[input_k] = filename
 
         workgraph_task = self.task_from_core(task)
         workgraph_task.inputs.filenames.value = filenames
