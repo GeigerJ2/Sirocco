@@ -353,6 +353,7 @@ class AiidaWorkGraph:
 
         workgraph_task = self.task_from_core(task)
         workgraph_task.inputs.filenames.value = filenames
+        # import ipdb; ipdb.set_trace()
 
     def run(
         self,

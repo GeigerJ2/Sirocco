@@ -265,6 +265,7 @@ def test_set_shelljob_filenames_parametrized(tmp_path):
     core_wf = Workflow.from_config_file(yaml_file)
     aiida_wf = AiidaWorkGraph(core_workflow=core_wf)
     filenames_list = [task.inputs.filenames.value for task in aiida_wf._workgraph.tasks]
+    arguments_list = [task.inputs.arguments.value for task in aiida_wf._workgraph.tasks]
     expected_filenames_list = [
         {"forcing": "forcing", "initial_conditions": "initial_conditions"},
         {"forcing": "forcing", "initial_conditions": "initial_conditions"},
@@ -285,4 +286,31 @@ def test_set_shelljob_filenames_parametrized(tmp_path):
         {"analysis": "analysis_foo_bar_date_2026_01_01_00_00_00"},
         {"analysis": "analysis_foo_bar_date_2027_01_01_00_00_00"},
     ]
+    expected_arguments_list = [
+        "--restart  --init {initial_conditions} --forcing {forcing}",
+        "--restart  --init {initial_conditions} --forcing {forcing}",
+        "--restart {icon_restart_foo_0___bar_3_0___date_2026_01_01_00_00_00} --init  " "--forcing {forcing}",
+        "--restart {icon_restart_foo_1___bar_3_0___date_2026_01_01_00_00_00} --init  " "--forcing {forcing}",
+        "--restart {icon_restart_foo_0___bar_3_0___date_2026_07_01_00_00_00} --init  " "--forcing {forcing}",
+        "--restart {icon_restart_foo_1___bar_3_0___date_2026_07_01_00_00_00} --init  " "--forcing {forcing}",
+        "--restart {icon_restart_foo_0___bar_3_0___date_2027_01_01_00_00_00} --init  " "--forcing {forcing}",
+        "--restart {icon_restart_foo_1___bar_3_0___date_2027_01_01_00_00_00} --init  " "--forcing {forcing}",
+        "{icon_output_foo_0___bar_3_0___date_2026_01_01_00_00_00} "
+        "{icon_output_foo_1___bar_3_0___date_2026_01_01_00_00_00}",
+        "{icon_output_foo_0___bar_3_0___date_2026_07_01_00_00_00} "
+        "{icon_output_foo_1___bar_3_0___date_2026_07_01_00_00_00}",
+        "{icon_output_foo_0___bar_3_0___date_2027_01_01_00_00_00} "
+        "{icon_output_foo_1___bar_3_0___date_2027_01_01_00_00_00}",
+        "{icon_output_foo_0___bar_3_0___date_2027_07_01_00_00_00} "
+        "{icon_output_foo_1___bar_3_0___date_2027_07_01_00_00_00}",
+        "{analysis_foo_bar_3_0___date_2026_01_01_00_00_00}",
+        "{analysis_foo_bar_3_0___date_2026_07_01_00_00_00}",
+        "{analysis_foo_bar_3_0___date_2027_01_01_00_00_00}",
+        "{analysis_foo_bar_3_0___date_2027_07_01_00_00_00}",
+        "{analysis_foo_bar_date_2026_01_01_00_00_00} " "{analysis_foo_bar_date_2026_07_01_00_00_00}",
+        "{analysis_foo_bar_date_2027_01_01_00_00_00} " "{analysis_foo_bar_date_2027_07_01_00_00_00}",
+    ]
     assert filenames_list == expected_filenames_list
+    import ipdb
+
+    ipdb.set_trace()
