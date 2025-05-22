@@ -8,6 +8,9 @@ include:
 stages:
   - build
 
+variables:
+  TMPDIR: "/var/tmp"
+
 job:
   stage: build
   extends: .f7t-controller
