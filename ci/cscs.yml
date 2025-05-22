@@ -1,13 +1,12 @@
+---
 # Include external CI template from CSCS
-# TODO: Possibly 
 include:
-  - remote: 'https://gitlab.com/cscs-ci/recipes/-/raw/master/templates/v2/.ci-ext.yml'
+  - remote: "https://gitlab.com/cscs-ci/recipes/-/raw/master/templates/v2/.ci-ext.yml"
 
 # Defines the stages for the CI/CD pipeline
 # Jobs in earlier stages are run before jobs in later stages.
 stages:
   - build
-  # - test
 
 job:
   stage: build
@@ -20,15 +19,4 @@ job:
     - pip install --upgrade pip
     - pip install hatch
     - pip install .
-    - verdi presto --profile-name "ci"
-
-# Do we even need a Dockerfile for this? Which OS are the runners
-# build_job:
-#   stage: build
-#   extends: .baremetal-runner-daint-gh200
-#   script: hostname
-    #   - apt-get update -y && apt-get install -y --no-install-recommends graphviz graphviz-dev rabbitmq-server
-    # - pip install --upgrade pip
-    # - pip install hatch
-    # - pip install .
-    # - verdi presto --profile-name "ci"
+    - verdi presto --profile-name "cscs-ci"
