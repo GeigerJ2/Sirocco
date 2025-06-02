@@ -1,7 +1,5 @@
----
-start_date: &root_start_date '2026-01-01T00:00'
-stop_date: &root_stop_date '2028-01-01T00:00'
-
+start_date: &root_start_date "2026-01-01T00:00"
+stop_date: &root_stop_date "2027-01-01T00:00"
 cycles:
   - bimonthly_tasks:
       cycling:
@@ -49,41 +47,42 @@ cycles:
             inputs:
               - analysis_foo_bar:
                   target_cycle:
-                    lag: ['P0M', 'P6M']
+                    lag: ["P0M", "P6M"]
                   port: None
             outputs: [yearly_analysis]
-
 tasks:
   - icon:
       plugin: shell
-      # For relative path execpt if this cannot be resolved to a registered code
-      # Probably shouldn't enforce to absolute path; or provide a code argument instead, this should be
-      # unambigous 
       src: scripts/icon.py
       command: "icon.py --restart {PORT::restart} --init {PORT::init} --forcing {PORT::forcing}"
       parameters: [foo, bar]
+      computer: localhost
   - statistics_foo:
       plugin: shell
       src: scripts/statistics.py
       command: "statistics.py {PORT::None}"
       parameters: [bar]
+      computer: localhost
   - statistics_foo_bar:
       plugin: shell
       src: scripts/statistics.py
       command: "statistics.py {PORT::None}"
+      computer: localhost
   - merge:
       plugin: shell
       src: scripts/merge.py
       command: "merge.py {PORT::None}"
-
+      computer: localhost
 data:
   available:
     - initial_conditions:
         type: file
-        src: data/initial_conditions
+        src: /home/geiger_j/aiida_projects/swiss-twins/git-repos/Sirocco/tests/cases/remote/config/data/initial_conditions
+        computer: localhost
     - forcing:
         type: file
-        src: data/forcing
+        src: /home/geiger_j/aiida_projects/swiss-twins/git-repos/Sirocco/tests/cases/remote/config/data/forcing
+        computer: localhost
   generated:
     - icon_output:
         type: file
@@ -103,7 +102,6 @@ data:
     - yearly_analysis:
         type: file
         src: analysis
-
 parameters:
   foo: [0, 1]
   bar: [3.0]

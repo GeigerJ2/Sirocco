@@ -23,13 +23,20 @@ def test_set_shelljob_filenames(tmp_path):
                 tasks=[
                     models.ConfigCycleTask(
                         name="task",
-                        inputs=[models.ConfigCycleTaskInput(name="my_data", port="unused")],
+                        inputs=[
+                            models.ConfigCycleTaskInput(name="my_data", port="unused")
+                        ],
                     ),
                 ],
             ),
         ],
         tasks=[
-            models.ConfigShellTask(name="task", command="echo test", src=str(script_path), computer="localhost"),
+            models.ConfigShellTask(
+                name="task",
+                command="echo test",
+                src=str(script_path),
+                computer="localhost",
+            ),
         ],
         data=models.ConfigData(
             available=[
@@ -70,7 +77,9 @@ def test_multiple_inputs_filenames(tmp_path):
                     models.ConfigCycleTask(
                         name="task",
                         inputs=[
-                            models.ConfigCycleTaskInput(name=f"data_{i}", port=f"port_{i}")
+                            models.ConfigCycleTaskInput(
+                                name=f"data_{i}", port=f"port_{i}"
+                            )
                             for i in range(len(file_names))
                         ],
                     ),
@@ -78,7 +87,12 @@ def test_multiple_inputs_filenames(tmp_path):
             ),
         ],
         tasks=[
-            models.ConfigShellTask(name="task", command="echo test", src=str(script_path), computer="localhost"),
+            models.ConfigShellTask(
+                name="task",
+                command="echo test",
+                src=str(script_path),
+                computer="localhost",
+            ),
         ],
         data=models.ConfigData(
             available=[
@@ -118,13 +132,20 @@ def test_directory_input_filenames(tmp_path):
                 tasks=[
                     models.ConfigCycleTask(
                         name="task",
-                        inputs=[models.ConfigCycleTaskInput(name="my_dir", port="unused")],
+                        inputs=[
+                            models.ConfigCycleTaskInput(name="my_dir", port="unused")
+                        ],
                     ),
                 ],
             ),
         ],
         tasks=[
-            models.ConfigShellTask(name="task", command="echo test", src=str(script_path), computer="localhost"),
+            models.ConfigShellTask(
+                name="task",
+                command="echo test",
+                src=str(script_path),
+                computer="localhost",
+            ),
         ],
         data=models.ConfigData(
             available=[
@@ -266,37 +287,82 @@ def test_set_shelljob_filenames_parametrized(tmp_path):
     aiida_wf = AiidaWorkGraph(core_workflow=core_wf)
     filenames_list = [task.inputs.filenames.value for task in aiida_wf._workgraph.tasks]
     arguments_list = [task.inputs.arguments.value for task in aiida_wf._workgraph.tasks]
-    nodes_list = [list(task.inputs.nodes._sockets.keys()) for task in aiida_wf._workgraph.tasks]
-
-    obtained_filenames_list = [
-        {"forcing": "forcing", "initial_conditions": "initial_conditions"},
-        {"forcing": "forcing", "initial_conditions": "initial_conditions"},
-        {"forcing": "forcing", "restart": "icon_restart_foo_0___bar_3_0___date_2026_01_01_00_00_00"},
-        {"forcing": "forcing", "restart": "icon_restart_foo_1___bar_3_0___date_2026_01_01_00_00_00"},
-        {"forcing": "forcing", "restart": "icon_restart_foo_0___bar_3_0___date_2026_07_01_00_00_00"},
-        {"forcing": "forcing", "restart": "icon_restart_foo_1___bar_3_0___date_2026_07_01_00_00_00"},
-        {"forcing": "forcing", "restart": "icon_restart_foo_0___bar_3_0___date_2027_01_01_00_00_00"},
-        {"forcing": "forcing", "restart": "icon_restart_foo_1___bar_3_0___date_2027_01_01_00_00_00"},
-        {"icon_output": "icon_output_foo_0___bar_3_0___date_2026_01_01_00_00_00"},
-        {"icon_output": "icon_output_foo_0___bar_3_0___date_2026_07_01_00_00_00"},
-        {"icon_output": "icon_output_foo_0___bar_3_0___date_2027_01_01_00_00_00"},
-        {"icon_output": "icon_output_foo_0___bar_3_0___date_2027_07_01_00_00_00"},
-        {"analysis": "analysis_foo_bar_3_0___date_2026_01_01_00_00_00"},
-        {"analysis": "analysis_foo_bar_3_0___date_2026_07_01_00_00_00"},
-        {"analysis": "analysis_foo_bar_3_0___date_2027_01_01_00_00_00"},
-        {"analysis": "analysis_foo_bar_3_0___date_2027_07_01_00_00_00"},
-        {"analysis": "analysis_foo_bar_date_2026_01_01_00_00_00"},
-        {"analysis": "analysis_foo_bar_date_2027_01_01_00_00_00"},
+    nodes_list = [
+        list(task.inputs.nodes._sockets.keys()) for task in aiida_wf._workgraph.tasks
     ]
-    obtained_arguments_list = [
+
+    expected_filenames_list = [
+        {"forcing": "forcing", "initial_conditions": "initial_conditions"},
+        {"forcing": "forcing", "initial_conditions": "initial_conditions"},
+        {
+            "forcing": "forcing",
+            "icon_restart_foo_0___bar_3_0___date_2026_01_01_00_00_00": "restart",
+        },
+        {
+            "forcing": "forcing",
+            "icon_restart_foo_1___bar_3_0___date_2026_01_01_00_00_00": "restart",
+        },
+        {
+            "forcing": "forcing",
+            "icon_restart_foo_0___bar_3_0___date_2026_07_01_00_00_00": "restart",
+        },
+        {
+            "forcing": "forcing",
+            "icon_restart_foo_1___bar_3_0___date_2026_07_01_00_00_00": "restart",
+        },
+        {
+            "forcing": "forcing",
+            "icon_restart_foo_0___bar_3_0___date_2027_01_01_00_00_00": "restart",
+        },
+        {
+            "forcing": "forcing",
+            "icon_restart_foo_1___bar_3_0___date_2027_01_01_00_00_00": "restart",
+        },
+        {
+            "icon_output_foo_0___bar_3_0___date_2026_01_01_00_00_00": "icon_output_foo_0___bar_3_0___date_2026_01_01_00_00_00",
+            "icon_output_foo_1___bar_3_0___date_2026_01_01_00_00_00": "icon_output_foo_1___bar_3_0___date_2026_01_01_00_00_00",
+        },
+        {
+            "icon_output_foo_0___bar_3_0___date_2026_07_01_00_00_00": "icon_output_foo_0___bar_3_0___date_2026_07_01_00_00_00",
+            "icon_output_foo_1___bar_3_0___date_2026_07_01_00_00_00": "icon_output_foo_1___bar_3_0___date_2026_07_01_00_00_00",
+        },
+        {
+            "icon_output_foo_0___bar_3_0___date_2027_01_01_00_00_00": "icon_output_foo_0___bar_3_0___date_2027_01_01_00_00_00",
+            "icon_output_foo_1___bar_3_0___date_2027_01_01_00_00_00": "icon_output_foo_1___bar_3_0___date_2027_01_01_00_00_00",
+        },
+        {
+            "icon_output_foo_0___bar_3_0___date_2027_07_01_00_00_00": "icon_output_foo_0___bar_3_0___date_2027_07_01_00_00_00",
+            "icon_output_foo_1___bar_3_0___date_2027_07_01_00_00_00": "icon_output_foo_1___bar_3_0___date_2027_07_01_00_00_00",
+        },
+        {"analysis_foo_bar_3_0___date_2026_01_01_00_00_00": "analysis"},
+        {"analysis_foo_bar_3_0___date_2026_07_01_00_00_00": "analysis"},
+        {"analysis_foo_bar_3_0___date_2027_01_01_00_00_00": "analysis"},
+        {"analysis_foo_bar_3_0___date_2027_07_01_00_00_00": "analysis"},
+        {
+            "analysis_foo_bar_date_2026_01_01_00_00_00": "analysis_foo_bar_date_2026_01_01_00_00_00",
+            "analysis_foo_bar_date_2026_07_01_00_00_00": "analysis_foo_bar_date_2026_07_01_00_00_00",
+        },
+        {
+            "analysis_foo_bar_date_2027_01_01_00_00_00": "analysis_foo_bar_date_2027_01_01_00_00_00",
+            "analysis_foo_bar_date_2027_07_01_00_00_00": "analysis_foo_bar_date_2027_07_01_00_00_00",
+        },
+    ]
+
+    expected_arguments_list = [
         "--restart  --init {initial_conditions} --forcing {forcing}",
         "--restart  --init {initial_conditions} --forcing {forcing}",
-        "--restart {icon_restart_foo_0___bar_3_0___date_2026_01_01_00_00_00} --init  " "--forcing {forcing}",
-        "--restart {icon_restart_foo_1___bar_3_0___date_2026_01_01_00_00_00} --init  " "--forcing {forcing}",
-        "--restart {icon_restart_foo_0___bar_3_0___date_2026_07_01_00_00_00} --init  " "--forcing {forcing}",
-        "--restart {icon_restart_foo_1___bar_3_0___date_2026_07_01_00_00_00} --init  " "--forcing {forcing}",
-        "--restart {icon_restart_foo_0___bar_3_0___date_2027_01_01_00_00_00} --init  " "--forcing {forcing}",
-        "--restart {icon_restart_foo_1___bar_3_0___date_2027_01_01_00_00_00} --init  " "--forcing {forcing}",
+        "--restart {icon_restart_foo_0___bar_3_0___date_2026_01_01_00_00_00} --init  "
+        "--forcing {forcing}",
+        "--restart {icon_restart_foo_1___bar_3_0___date_2026_01_01_00_00_00} --init  "
+        "--forcing {forcing}",
+        "--restart {icon_restart_foo_0___bar_3_0___date_2026_07_01_00_00_00} --init  "
+        "--forcing {forcing}",
+        "--restart {icon_restart_foo_1___bar_3_0___date_2026_07_01_00_00_00} --init  "
+        "--forcing {forcing}",
+        "--restart {icon_restart_foo_0___bar_3_0___date_2027_01_01_00_00_00} --init  "
+        "--forcing {forcing}",
+        "--restart {icon_restart_foo_1___bar_3_0___date_2027_01_01_00_00_00} --init  "
+        "--forcing {forcing}",
         "{icon_output_foo_0___bar_3_0___date_2026_01_01_00_00_00} "
         "{icon_output_foo_1___bar_3_0___date_2026_01_01_00_00_00}",
         "{icon_output_foo_0___bar_3_0___date_2026_07_01_00_00_00} "
@@ -309,10 +375,13 @@ def test_set_shelljob_filenames_parametrized(tmp_path):
         "{analysis_foo_bar_3_0___date_2026_07_01_00_00_00}",
         "{analysis_foo_bar_3_0___date_2027_01_01_00_00_00}",
         "{analysis_foo_bar_3_0___date_2027_07_01_00_00_00}",
-        "{analysis_foo_bar_date_2026_01_01_00_00_00} " "{analysis_foo_bar_date_2026_07_01_00_00_00}",
-        "{analysis_foo_bar_date_2027_01_01_00_00_00} " "{analysis_foo_bar_date_2027_07_01_00_00_00}",
+        "{analysis_foo_bar_date_2026_01_01_00_00_00} "
+        "{analysis_foo_bar_date_2026_07_01_00_00_00}",
+        "{analysis_foo_bar_date_2027_01_01_00_00_00} "
+        "{analysis_foo_bar_date_2027_07_01_00_00_00}",
     ]
-    obtained_nodes_list = [
+
+    expected_nodes_list = [
         ["initial_conditions", "forcing"],
         ["initial_conditions", "forcing"],
         ["icon_restart_foo_0___bar_3_0___date_2026_01_01_00_00_00", "forcing"],
@@ -341,11 +410,16 @@ def test_set_shelljob_filenames_parametrized(tmp_path):
         ["analysis_foo_bar_3_0___date_2026_07_01_00_00_00"],
         ["analysis_foo_bar_3_0___date_2027_01_01_00_00_00"],
         ["analysis_foo_bar_3_0___date_2027_07_01_00_00_00"],
-        ["analysis_foo_bar_date_2026_01_01_00_00_00", "analysis_foo_bar_date_2026_07_01_00_00_00"],
-        ["analysis_foo_bar_date_2027_01_01_00_00_00", "analysis_foo_bar_date_2027_07_01_00_00_00"],
+        [
+            "analysis_foo_bar_date_2026_01_01_00_00_00",
+            "analysis_foo_bar_date_2026_07_01_00_00_00",
+        ],
+        [
+            "analysis_foo_bar_date_2027_01_01_00_00_00",
+            "analysis_foo_bar_date_2027_07_01_00_00_00",
+        ],
     ]
 
-    # import ipdb; ipdb.set_trace()
-    # assert filenames_list == obtained_filenames_list
-
-    result = aiida_wf.run()
+    assert arguments_list == expected_arguments_list
+    assert filenames_list == expected_filenames_list
+    assert nodes_list == expected_nodes_list

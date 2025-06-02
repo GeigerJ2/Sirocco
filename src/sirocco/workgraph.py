@@ -9,12 +9,12 @@ import aiida.orm
 import aiida_workgraph  # type: ignore[import-untyped] # does not have proper typing and stubs
 import aiida_workgraph.tasks.factory.shelljob_task  # type: ignore[import-untyped]  # is only for a workaround
 from aiida.common.exceptions import NotExistent
+from rich.pretty import pprint
 
 from sirocco import core
 
 if TYPE_CHECKING:
     from aiida_workgraph.socket import TaskSocket  # type: ignore[import-untyped]
-    from aiida_workgraph.sockets.builtins import SocketAny
 
     WorkgraphDataNode: TypeAlias = aiida.orm.RemoteData | aiida.orm.SinglefileData | aiida.orm.FolderData
 
@@ -27,16 +27,6 @@ def _execute(self, engine_process, args=None, kwargs=None, var_kwargs=None):  # 
     from aiida_shell import ShellJob
     from aiida_workgraph.utils import create_and_pause_process  # type: ignore[import-untyped]
 
-    # Check here if possible to fix the command, currently looks like:
-    # {
-    #     'arguments': '--restart  --init {initial_conditions} --forcing {forcing}',
-    #     'command': '/home/geiger_j/aiida_projects/swiss-twins/git-repos/Sirocco/tests/cases/parameters/config/scripts/icon.py',
-    #     'metadata': {'computer': <Computer: localhost (localhost), pk: 1>,
-    #                 'options': {'prepend_text': '', 'use_symlinks': True}},
-    #     'nodes': {'forcing': <RemoteData: uuid: 3a0dff75-2629-48d6-8de6-b45637f255d9 (pk: 2)>,
-    #             'initial_conditions': <RemoteData: uuid: 07414f3c-e635-4056-b5ff-d1395dceb632 (pk: 1)>},
-    #     'outputs': []
-    # }
     inputs = aiida_workgraph.tasks.factory.shelljob_task.prepare_for_shell_task(kwargs)
 
     # Workaround starts here
@@ -48,11 +38,6 @@ def _execute(self, engine_process, args=None, kwargs=None, var_kwargs=None):  # 
     missing_outputs = task_outputs.difference(default_outputs)
     inputs["outputs"] = list(missing_outputs)
     # Workaround ends here
-
-    # `code_label` is constructed via:
-    # code_label = f'{command}@{computer.label}'
-    # In aiida-shell
-    # ShellCode inherits from InstalledCode... (what about PortableCode??)
 
     inputs["metadata"].update({"call_link_label": self.name})
     if self.action == "PAUSE":
@@ -317,10 +302,10 @@ class AiidaWorkGraph:
         self.task_from_core(task).wait = [self.task_from_core(wt) for wt in task.wait_on]
 
     def _set_shelljob_arguments(self, task: core.ShellTask):
-        """set AiiDA ShellJob arguments by replacing port placeholders by aiida labels"""
-
+        """Set AiiDA ShellJob arguments by replacing port placeholders with AiiDA labels."""
         workgraph_task = self.task_from_core(task)
-        workgraph_task_arguments: SocketAny = workgraph_task.inputs.arguments
+        workgraph_task_arguments = workgraph_task.inputs.arguments
+
         if workgraph_task_arguments is None:
             msg = (
                 f"Workgraph task {workgraph_task.name!r} did not initialize arguments nodes in the workgraph "
@@ -328,39 +313,56 @@ class AiidaWorkGraph:
             )
             raise ValueError(msg)
 
-        input_labels = {port: list(map(self.label_placeholder, task.inputs[port])) for port in task.inputs}
+        # Build input_labels dictionary for port resolution
+        input_labels = {}
+        for port_name, input_list in task.inputs.items():
+            input_labels[port_name] = []
+            for input_ in input_list:
+                # Use the full AiiDA label as the placeholder content
+                input_label = self.get_aiida_label_from_graph_item(input_)
+                input_labels[port_name].append(f"{{{input_label}}}")
+
+        # Resolve the command with port placeholders replaced by input labels
         _, arguments = self.split_cmd_arg(task.resolve_ports(input_labels))
         workgraph_task_arguments.value = arguments
 
-    def _set_shelljob_filenames(self, task: core.ShellTask):
-        """set AiiDA ShellJob filenames for Data entities"""
 
+    def _set_shelljob_filenames(self, task: core.ShellTask):
+        """Set AiiDA ShellJob filenames for data entities, including parameterized data."""
         filenames = {}
         workgraph_task = self.task_from_core(task)
+
         if not workgraph_task.inputs.filenames:
-            import ipdb; ipdb.set_trace()
             return
 
         for input_ in task.input_data_nodes():
+            input_label = self.get_aiida_label_from_graph_item(input_)
+
             if task.computer and input_.computer and isinstance(input_, core.AvailableData):
+                # For RemoteData on the same computer, use just the filename
                 filename = Path(input_.src).name
                 filenames[input_.name] = filename
-            # PRCOMMENT: GeneratedData has no explicit Computer attribute.
-            # This is explicit from task, or should we add that, as well? (probably not necessary)
-            elif task.computer and isinstance(input_, core.GeneratedData):
-                for input_k, input_v in task.inputs.items():
-                    if not input_v:
-                        continue
-                    if input_ == input_v[0]:
-                        filename = self.label_placeholder(input_).strip('{').strip('}')
-                        if input_k == "None":
-                            filenames[str(input_.src)] = filename
-                        else:
-                            filenames[input_k] = filename
+            else:
+                # For other cases (including GeneratedData), we need to handle parameterized data
+                # Importantly, multiple data nodes with the same base name but different
+                # coordinates need unique filenames to avoid conflicts in the working directory
 
-        if not filenames:
-            import ipdb; ipdb.set_trace()
+                # Count how many inputs have the same base name
+                same_name_count = sum(1 for inp in task.input_data_nodes() if inp.name == input_.name)
+
+                if same_name_count > 1:
+                    # Multiple data nodes with same base name - use full label as filename
+                    # to ensure uniqueness in working directory
+                    filename = input_label
+                else:
+                    # Single data node with this name - can use simple filename
+                    filename = Path(input_.src).name if hasattr(input_, 'src') else input_.name
+
+                # The key in filenames dict should be the input label (what's used in nodes dict)
+                filenames[input_label] = filename
+
         workgraph_task.inputs.filenames.value = filenames
+
 
     def run(
         self,

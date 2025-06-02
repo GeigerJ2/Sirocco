@@ -1,6 +1,5 @@
----
-start_date: &root_start_date '2026-01-01T00:00'
-stop_date: &root_stop_date '2028-01-01T00:00'
+start_date: &root_start_date "2026-01-01T00:00"
+stop_date: &root_stop_date "2028-01-01T00:00"
 
 cycles:
   - bimonthly_tasks:
@@ -49,7 +48,7 @@ cycles:
             inputs:
               - analysis_foo_bar:
                   target_cycle:
-                    lag: ['P0M', 'P6M']
+                    lag: ["P0M", "P6M"]
                   port: None
             outputs: [yearly_analysis]
 
@@ -58,7 +57,7 @@ tasks:
       plugin: shell
       # For relative path execpt if this cannot be resolved to a registered code
       # Probably shouldn't enforce to absolute path; or provide a code argument instead, this should be
-      # unambigous 
+      # unambigous
       src: scripts/icon.py
       command: "icon.py --restart {PORT::restart} --init {PORT::init} --forcing {PORT::forcing}"
       parameters: [foo, bar]
