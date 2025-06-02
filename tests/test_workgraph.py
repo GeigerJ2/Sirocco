@@ -132,43 +132,57 @@ def test_basic_remote_data_filename(tmp_path):
     assert task.inputs.filenames.value == {"data": "foo.txt"}
     assert task.inputs.arguments.value == "{data}"
 
+@pytest.mark.usefixtures('aiida_localhost')
 def test_parameterized_filename_conflicts(tmp_path):
     """Test that parameterized data gets unique filenames when conflicts occur."""
     yaml_content = textwrap.dedent("""
-    cycles:
-        - test_cycle:
-            tasks:
+        name: test_workflow
+        cycles:
+            - simulation_cycle:
+                tasks:
+                    - simulate:
+                        inputs:
+                            - input_file:
+                                port: input
+                        outputs: [simulation_output]
+            - processing_cycle:
+                tasks:
+                    - process_data:
+                        inputs:
+                            - simulation_output:
+                                parameters:
+                                    param: all
+                                port: files
+                        outputs: [processed_output]
+        tasks:
+            - simulate:
+                plugin: shell
+                command: "simulate.py {PORT::input}"
+                parameters: [param]
+                computer: localhost
             - process_data:
-                inputs:
-                    - simulation_output:
-                        parameters:
-                        param: all
-                        port: files
-                outputs: [processed_output]
-    tasks:
-        - process_data:
-            plugin: shell
-            command: "process.py {PORT::files}"
-            parameters: [param]
-            computer: localhost
-    data:
-        available:
-        - input_file:
-            type: file
-            src: input.txt
-            computer: localhost
-        generated:
-        - simulation_output:
-            type: file
-            src: output.dat
-            parameters: [param]
-        - processed_output:
-            type: file
-            src: processed.dat
-            parameters: [param]
-    parameters:
-        param: [1, 2]
-    """)
+                plugin: shell
+                command: "process.py {PORT::files}"
+                parameters: [param]
+                computer: localhost
+        data:
+            available:
+                - input_file:
+                    type: file
+                    src: input.txt
+                    computer: localhost
+            generated:
+                - simulation_output:
+                    type: file
+                    src: output.dat
+                    parameters: [param]
+                - processed_output:
+                    type: file
+                    src: processed.dat
+                    parameters: [param]
+        parameters:
+            param: [1, 2]
+        """)
 
     config_file = tmp_path / "config.yml"
     config_file.write_text(yaml_content)
@@ -207,6 +221,97 @@ def test_parameterized_filename_conflicts(tmp_path):
         assert filenames[key] == key  # Full label used as filename
         assert key in arguments  # Key appears in arguments
 
+@pytest.mark.usefixtures('aiida_localhost')
+def test_parameterized_filename_conflicts(tmp_path):
+    """Test that parameterized data gets unique filenames when conflicts occur."""
+    yaml_content = textwrap.dedent("""
+        name: test_workflow
+        cycles:
+            - simulation_cycle:
+                tasks:
+                    - simulate:
+                        inputs:
+                            - input_file:
+                                port: input
+                        outputs: [simulation_output]
+            - processing_cycle:
+                tasks:
+                    - process_data:
+                        inputs:
+                            - simulation_output:
+                                parameters:
+                                    param: all
+                                port: files
+                        outputs: [processed_output]
+        tasks:
+            - simulate:
+                plugin: shell
+                command: "/tmp/simulate.py {PORT::input}"
+                parameters: [param]
+                computer: localhost
+            - process_data:
+                plugin: shell
+                command: "/tmp/process.py {PORT::files}"
+                parameters: [param]
+                computer: localhost
+        data:
+            available:
+                - input_file:
+                    type: file
+                    src: input.txt
+                    computer: localhost
+            generated:
+                - simulation_output:
+                    type: file
+                    src: output.dat
+                    parameters: [param]
+                - processed_output:
+                    type: file
+                    src: processed.dat
+                    parameters: [param]
+        parameters:
+            param: [1, 2]
+        """)
+
+    config_file = tmp_path / "config.yml"
+    config_file.write_text(yaml_content)
+
+    # Create required files
+    (tmp_path / "input.txt").touch()
+    (tmp_path / "simulate.py").touch()
+    (tmp_path / "process.py").touch()
+
+    core_wf = Workflow.from_config_file(str(config_file))
+    aiida_wf = AiidaWorkGraph(core_wf)
+
+    # Find the task that processes multiple parameterized inputs
+    process_tasks = [
+        task
+        for task in aiida_wf._workgraph.tasks
+        if task.name.startswith("process_data")
+    ]
+
+    # Should have 2 tasks (one for each parameter value)
+    assert len(process_tasks) == 2
+
+    # Check that each task has unique node keys and appropriate filenames
+    for task in process_tasks:
+        nodes_keys = list(task.inputs.nodes._sockets.keys())
+        filenames = task.inputs.filenames.value
+        arguments = task.inputs.arguments.value
+
+        # Each task should have two simulation outputs as input
+        sim_output_keys = [
+            k for k in nodes_keys if k.startswith("simulation_output")
+        ]
+        import ipdb; ipdb.set_trace()
+        assert len(sim_output_keys) == 2
+
+        # The filename should be the full label (since there are conflicts)
+        key = sim_output_keys[0]
+        assert filenames[key] == key  # Full label used as filename
+        assert key in arguments  # Key appears in arguments
+
 def test_mixed_conflict_and_no_conflict(tmp_path):
     """Test workflow with both conflicting and non-conflicting data."""
     yaml_content = textwrap.dedent("""
@@ -226,6 +331,7 @@ def test_mixed_conflict_and_no_conflict(tmp_path):
         - analyze:
             plugin: shell
             command: "analyze.py --config {PORT::config} --data {PORT::data}"
+            src: analyze.py
             parameters: [run]
             computer: localhost
     data:
@@ -274,12 +380,6 @@ def test_mixed_conflict_and_no_conflict(tmp_path):
             k for k in filenames.keys() if k.startswith("simulation_data")
         ][0]
         assert filenames[sim_data_key] == sim_data_key  # Full label as filename
-
-
-# ============================================================================
-# COMPREHENSIVE TEST - Keep one comprehensive test for the full scenario
-# ============================================================================
-
 
 @pytest.mark.usefixtures("aiida_localhost")
 def test_comprehensive_parameterized_workflow(tmp_path):
@@ -381,192 +481,18 @@ def test_comprehensive_parameterized_workflow(tmp_path):
         assert "foo_" in key and "bar_3_0" in key  # Contains parameter info
 
 
-# ============================================================================
-# FIXTURES
-# ============================================================================
-
-
-@pytest.fixture
-def sample_workflow_config(tmp_path):
-    """Fixture providing a reusable workflow configuration for testing."""
-    config = {
-        "name": "test_workflow",
-        "rootdir": tmp_path,
-        "cycles": [],
-        "tasks": [],
-        "data": models.ConfigData(),
-        "parameters": {},
-    }
-    return config
-
-
-# import pytest
-# from aiida import orm
-
-# from sirocco.core import Workflow
-# from sirocco.parsing import yaml_data_models as models
-# from sirocco.workgraph import AiidaWorkGraph
-# import textwrap
-
-
-# @pytest.mark.usefixtures("aiida_localhost")
-# def test_set_shelljob_filenames(tmp_path):
-#     file_name = "foo.txt"
-#     file_path = tmp_path / file_name
-#     # Dummy script, as `src` must be specified due to relative command path
-#     script_path = tmp_path / "my_script.sh"
-
-#     config_wf = models.ConfigWorkflow(
-#         name="remote",
-#         rootdir=tmp_path,
-#         cycles=[
-#             models.ConfigCycle(
-#                 name="remote",
-#                 tasks=[
-#                     models.ConfigCycleTask(
-#                         name="task",
-#                         inputs=[
-#                             models.ConfigCycleTaskInput(name="my_data", port="unused")
-#                         ],
-#                     ),
-#                 ],
-#             ),
-#         ],
-#         tasks=[
-#             models.ConfigShellTask(
-#                 name="task",
-#                 command="echo test",
-#                 src=str(script_path),
-#                 computer="localhost",
-#             ),
-#         ],
-#         data=models.ConfigData(
-#             available=[
-#                 models.ConfigAvailableData(
-#                     name="my_data",
-#                     type=models.DataType.FILE,
-#                     src=str(file_path),
-#                     computer="localhost",
-#                 )
-#             ],
-#         ),
-#         parameters={},
-#     )
-
-#     core_wf = Workflow.from_config_workflow(config_workflow=config_wf)
-#     aiida_wf = AiidaWorkGraph(core_workflow=core_wf)
-#     remote_data = aiida_wf._workgraph.tasks[0].inputs.nodes["my_data"].value  # noqa: SLF001
-#     assert isinstance(remote_data, orm.RemoteData)
-#     filenames = aiida_wf._workgraph.tasks[0].inputs.filenames.value  # noqa: SLF001
-#     assert filenames == {"my_data": "foo.txt"}
-
-
-# @pytest.mark.usefixtures("aiida_localhost")
-# def test_multiple_inputs_filenames(tmp_path):
-#     file_names = ["foo.txt", "bar.txt", "baz.dat"]
-#     for name in file_names:
-#         (tmp_path / name).touch()
-#     script_path = tmp_path / "my_script.sh"
-
-#     # Create configuration with multiple inputs
-#     config_wf = models.ConfigWorkflow(
-#         name="remote",
-#         rootdir=tmp_path,
-#         cycles=[
-#             models.ConfigCycle(
-#                 name="remote",
-#                 tasks=[
-#                     models.ConfigCycleTask(
-#                         name="task",
-#                         inputs=[
-#                             models.ConfigCycleTaskInput(
-#                                 name=f"data_{i}", port=f"port_{i}"
-#                             )
-#                             for i in range(len(file_names))
-#                         ],
-#                     ),
-#                 ],
-#             ),
-#         ],
-#         tasks=[
-#             models.ConfigShellTask(
-#                 name="task",
-#                 command="echo test",
-#                 src=str(script_path),
-#                 computer="localhost",
-#             ),
-#         ],
-#         data=models.ConfigData(
-#             available=[
-#                 models.ConfigAvailableData(
-#                     name=f"data_{i}",
-#                     type=models.DataType.FILE,
-#                     src=name,
-#                     computer="localhost",
-#                 )
-#                 for i, name in enumerate(file_names)
-#             ],
-#         ),
-#         parameters={},
-#     )
-
-#     core_wf = Workflow.from_config_workflow(config_workflow=config_wf)
-#     aiida_wf = AiidaWorkGraph(core_workflow=core_wf)
-
-#     obtained_filenames = {f"data_{i}": name for i, name in enumerate(file_names)}
-#     filenames = aiida_wf._workgraph.tasks[0].inputs.filenames.value  # noqa: SLF001
-#     assert filenames == obtained_filenames
-
-
-# @pytest.mark.usefixtures("aiida_localhost")
-# def test_directory_input_filenames(tmp_path):
-#     dir_name = "test_dir"
-#     dir_path = tmp_path / dir_name
-#     dir_path.mkdir()
-#     script_path = tmp_path / "my_script.sh"
-
-#     config_wf = models.ConfigWorkflow(
-#         name="remote",
-#         rootdir=tmp_path,
-#         cycles=[
-#             models.ConfigCycle(
-#                 name="remote",
-#                 tasks=[
-#                     models.ConfigCycleTask(
-#                         name="task",
-#                         inputs=[
-#                             models.ConfigCycleTaskInput(name="my_dir", port="unused")
-#                         ],
-#                     ),
-#                 ],
-#             ),
-#         ],
-#         tasks=[
-#             models.ConfigShellTask(
-#                 name="task",
-#                 command="echo test",
-#                 src=str(script_path),
-#                 computer="localhost",
-#             ),
-#         ],
-#         data=models.ConfigData(
-#             available=[
-#                 models.ConfigAvailableData(
-#                     name="my_dir",
-#                     type=models.DataType.DIR,
-#                     src=dir_name,
-#                     computer="localhost",
-#                 )
-#             ],
-#         ),
-#         parameters={},
-#     )
-
-#     core_wf = Workflow.from_config_workflow(config_workflow=config_wf)
-#     aiida_wf = AiidaWorkGraph(core_workflow=core_wf)
-
-#     filenames = aiida_wf._workgraph.tasks[0].inputs.filenames.value  # noqa: SLF001
-#     assert filenames == {"my_dir": dir_name}
+# @pytest.fixture
+# def sample_workflow_config(tmp_path):
+#     """Fixture providing a reusable workflow configuration for testing."""
+#     config = {
+#         "name": "test_workflow",
+#         "rootdir": tmp_path,
+#         "cycles": [],
+#         "tasks": [],
+#         "data": models.ConfigData(),
+#         "parameters": {},
+#     }
+#     return config
 
 
 # @pytest.mark.usefixtures("aiida_localhost")
