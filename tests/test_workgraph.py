@@ -462,8 +462,13 @@ def test_parameterized_workflow_regression(tmp_path):
 
 @pytest.mark.usefixtures("aiida_localhost")
 def test_comprehensive_parameterized_explicit(tmp_path):
+    import pathlib
+
+    # Get the test cases directory relative to the test file
+    test_dir = pathlib.Path(__file__).parent.parent / "cases"
+
     yaml_str = textwrap.dedent(
-        """
+        f"""
         start_date: &root_start_date "2026-01-01T00:00"
         stop_date: &root_stop_date "2028-01-01T00:00"
         cycles:
@@ -519,35 +524,35 @@ def test_comprehensive_parameterized_explicit(tmp_path):
         tasks:
             - icon:
                 plugin: shell
-                src: /home/geiger_j/aiida_projects/swiss-twins/git-repos/Sirocco/tests/cases/parameters/config/scripts/icon.py
-                command: "icon.py --restart {PORT::restart} --init {PORT::init} --forcing {PORT::forcing}"
+                src: {test_dir}/parameters/config/scripts/icon.py
+                command: "icon.py --restart {{PORT::restart}} --init {{PORT::init}} --forcing {{PORT::forcing}}"
                 parameters: [foo, bar]
                 computer: localhost
             - statistics_foo:
                 plugin: shell
-                src: /home/geiger_j/aiida_projects/swiss-twins/git-repos/Sirocco/tests/cases/parameters/config/scripts/statistics.py
-                command: "statistics.py {PORT::None}"
+                src: {test_dir}/parameters/config/scripts/statistics.py
+                command: "statistics.py {{PORT::None}}"
                 parameters: [bar]
                 computer: localhost
             - statistics_foo_bar:
                 plugin: shell
-                src: /home/geiger_j/aiida_projects/swiss-twins/git-repos/Sirocco/tests/cases/parameters/config/scripts/statistics.py
-                command: "statistics.py {PORT::None}"
+                src: {test_dir}/parameters/config/scripts/statistics.py
+                command: "statistics.py {{PORT::None}}"
                 computer: localhost
             - merge:
                 plugin: shell
-                src: /home/geiger_j/aiida_projects/swiss-twins/git-repos/Sirocco/tests/cases/parameters/config/scripts/merge.py
-                command: "merge.py {PORT::None}"
+                src: {test_dir}/parameters/config/scripts/merge.py
+                command: "merge.py {{PORT::None}}"
                 computer: localhost
         data:
             available:
                 - initial_conditions:
                     type: file
-                    src: /home/geiger_j/aiida_projects/swiss-twins/git-repos/Sirocco/tests/cases/small/config/data/initial_conditions
+                    src: {test_dir}/small/config/data/initial_conditions
                     computer: localhost
                 - forcing:
                     type: file
-                    src: /home/geiger_j/aiida_projects/swiss-twins/git-repos/Sirocco/tests/cases/parameters/config/data/forcing
+                    src: {test_dir}/parameters/config/data/forcing
                     computer: localhost
             generated:
                 - icon_output:
@@ -573,6 +578,117 @@ def test_comprehensive_parameterized_explicit(tmp_path):
             bar: [3.0]
         """
     )
+    # yaml_str = textwrap.dedent(
+    #     """
+    #     start_date: &root_start_date "2026-01-01T00:00"
+    #     stop_date: &root_stop_date "2028-01-01T00:00"
+    #     cycles:
+    #         - bimonthly_tasks:
+    #             cycling:
+    #                 start_date: *root_start_date
+    #                 stop_date: *root_stop_date
+    #                 period: P6M
+    #             tasks:
+    #                 - icon:
+    #                     inputs:
+    #                         - initial_conditions:
+    #                             when:
+    #                                 at: *root_start_date
+    #                             port: init
+    #                         - icon_restart:
+    #                             when:
+    #                                 after: *root_start_date
+    #                             target_cycle:
+    #                                 lag: -P6M
+    #                             parameters:
+    #                                 foo: single
+    #                                 bar: single
+    #                             port: restart
+    #                         - forcing:
+    #                             port: forcing
+    #                     outputs: [icon_output, icon_restart]
+    #                 - statistics_foo:
+    #                     inputs:
+    #                         - icon_output:
+    #                             parameters:
+    #                                 bar: single
+    #                             port: None
+    #                     outputs: [analysis_foo]
+    #                 - statistics_foo_bar:
+    #                     inputs:
+    #                         - analysis_foo:
+    #                             port: None
+    #                     outputs: [analysis_foo_bar]
+    #         - yearly:
+    #             cycling:
+    #                 start_date: *root_start_date
+    #                 stop_date: *root_stop_date
+    #                 period: P1Y
+    #             tasks:
+    #                 - merge:
+    #                     inputs:
+    #                         - analysis_foo_bar:
+    #                             target_cycle:
+    #                                 lag: ["P0M", "P6M"]
+    #                             port: None
+    #                     outputs: [yearly_analysis]
+    #     tasks:
+    #         - icon:
+    #             plugin: shell
+    #             src: /home/geiger_j/aiida_projects/swiss-twins/git-repos/Sirocco/tests/cases/parameters/config/scripts/icon.py
+    #             command: "icon.py --restart {PORT::restart} --init {PORT::init} --forcing {PORT::forcing}"
+    #             parameters: [foo, bar]
+    #             computer: localhost
+    #         - statistics_foo:
+    #             plugin: shell
+    #             src: /home/geiger_j/aiida_projects/swiss-twins/git-repos/Sirocco/tests/cases/parameters/config/scripts/statistics.py
+    #             command: "statistics.py {PORT::None}"
+    #             parameters: [bar]
+    #             computer: localhost
+    #         - statistics_foo_bar:
+    #             plugin: shell
+    #             src: /home/geiger_j/aiida_projects/swiss-twins/git-repos/Sirocco/tests/cases/parameters/config/scripts/statistics.py
+    #             command: "statistics.py {PORT::None}"
+    #             computer: localhost
+    #         - merge:
+    #             plugin: shell
+    #             src: /home/geiger_j/aiida_projects/swiss-twins/git-repos/Sirocco/tests/cases/parameters/config/scripts/merge.py
+    #             command: "merge.py {PORT::None}"
+    #             computer: localhost
+    #     data:
+    #         available:
+    #             - initial_conditions:
+    #                 type: file
+    #                 src: /home/geiger_j/aiida_projects/swiss-twins/git-repos/Sirocco/tests/cases/small/config/data/initial_conditions
+    #                 computer: localhost
+    #             - forcing:
+    #                 type: file
+    #                 src: /home/geiger_j/aiida_projects/swiss-twins/git-repos/Sirocco/tests/cases/parameters/config/data/forcing
+    #                 computer: localhost
+    #         generated:
+    #             - icon_output:
+    #                 type: file
+    #                 src: icon_output
+    #                 parameters: [foo, bar]
+    #             - icon_restart:
+    #                 type: file
+    #                 src: restart
+    #                 parameters: [foo, bar]
+    #             - analysis_foo:
+    #                 type: file
+    #                 src: analysis
+    #                 parameters: [bar]
+    #             - analysis_foo_bar:
+    #                 type: file
+    #                 src: analysis
+    #             - yearly_analysis:
+    #                 type: file
+    #                 src: analysis
+    #     parameters:
+    #         foo: [0, 1]
+    #         bar: [3.0]
+    #     """
+    # )
     yaml_file = tmp_path / "config.yml"
     yaml_file.write_text(yaml_str)
 
@@ -716,3 +832,10 @@ def test_comprehensive_parameterized_explicit(tmp_path):
     assert arguments_list == expected_arguments_list
     assert filenames_list == expected_filenames_list
     assert nodes_list == expected_nodes_list
+
+    # PRCOMMENT: Introduce this once we can automatically create the codes in a reasonable way.
+    # Currently, it still fails...
+    # output_node = aiida_wf.run()
+    # assert (
+    #     output_node.is_finished_ok
+    # ), f"Not successful run. Got exit code {output_node.exit_code} with message {output_node.exit_message}."
