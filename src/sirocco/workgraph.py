@@ -27,6 +27,16 @@ def _execute(self, engine_process, args=None, kwargs=None, var_kwargs=None):  # 
     from aiida_shell import ShellJob
     from aiida_workgraph.utils import create_and_pause_process  # type: ignore[import-untyped]
 
+    # Check here if possible to fix the command, currently looks like:
+    # {
+    #     'arguments': '--restart  --init {initial_conditions} --forcing {forcing}',
+    #     'command': '/home/geiger_j/aiida_projects/swiss-twins/git-repos/Sirocco/tests/cases/parameters/config/scripts/icon.py',
+    #     'metadata': {'computer': <Computer: localhost (localhost), pk: 1>,
+    #                 'options': {'prepend_text': '', 'use_symlinks': True}},
+    #     'nodes': {'forcing': <RemoteData: uuid: 3a0dff75-2629-48d6-8de6-b45637f255d9 (pk: 2)>,
+    #             'initial_conditions': <RemoteData: uuid: 07414f3c-e635-4056-b5ff-d1395dceb632 (pk: 1)>},
+    #     'outputs': []
+    # }
     inputs = aiida_workgraph.tasks.factory.shelljob_task.prepare_for_shell_task(kwargs)
 
     # Workaround starts here
@@ -38,6 +48,11 @@ def _execute(self, engine_process, args=None, kwargs=None, var_kwargs=None):  # 
     missing_outputs = task_outputs.difference(default_outputs)
     inputs["outputs"] = list(missing_outputs)
     # Workaround ends here
+
+    # `code_label` is constructed via:
+    # code_label = f'{command}@{computer.label}'
+    # In aiida-shell
+    # ShellCode inherits from InstalledCode... (what about PortableCode??)
 
     inputs["metadata"].update({"call_link_label": self.name})
     if self.action == "PAUSE":
@@ -185,7 +200,10 @@ class AiidaWorkGraph:
             except NotExistent as err:
                 msg = f"Could not find computer {data.computer!r} for input {data}."
                 raise ValueError(msg) from err
-            self._aiida_data_nodes[label] = aiida.orm.RemoteData(remote_path=data.src, label=label, computer=computer)
+            # `remote_path` must be str not PosixPath to be JSON-serializable
+            self._aiida_data_nodes[label] = aiida.orm.RemoteData(
+                remote_path=str(data.src), label=label, computer=computer
+            )
         elif data.type == "file":
             self._aiida_data_nodes[label] = aiida.orm.SinglefileData(label=label, file=data_full_path)
         elif data.type == "dir":
@@ -315,37 +333,41 @@ class AiidaWorkGraph:
         workgraph_task_arguments.value = arguments
 
     def _set_shelljob_filenames(self, task: core.ShellTask):
-        """set AiiDA ShellJob filenames for AvailableData entities"""
+        """set AiiDA ShellJob filenames for Data entities"""
 
         filenames = {}
         workgraph_task = self.task_from_core(task)
         if not workgraph_task.inputs.filenames:
+            import ipdb; ipdb.set_trace()
             return
 
         for input_ in task.input_data_nodes():
             if task.computer and input_.computer and isinstance(input_, core.AvailableData):
                 filename = Path(input_.src).name
                 filenames[input_.name] = filename
-            # NOTE: GeneratedData has no explicit Computer attribute
-            # elif task.computer and isinstance(input_, core.GeneratedData):
-            #     for input_k, input_v in task.inputs.items():
-            #         if not input_v:
-            #             continue
-            #         if input_ == input_v[0]:
-            #             filename = self.label_placeholder(input_).strip('{').strip('}')
-            #             if input_k == "None":
-            #                 filenames[input_.src] = filename
-            #             else:
-            #                 filenames[input_k] = filename
+            # PRCOMMENT: GeneratedData has no explicit Computer attribute.
+            # This is explicit from task, or should we add that, as well? (probably not necessary)
+            elif task.computer and isinstance(input_, core.GeneratedData):
+                for input_k, input_v in task.inputs.items():
+                    if not input_v:
+                        continue
+                    if input_ == input_v[0]:
+                        filename = self.label_placeholder(input_).strip('{').strip('}')
+                        if input_k == "None":
+                            filenames[str(input_.src)] = filename
+                        else:
+                            filenames[input_k] = filename
 
+        if not filenames:
+            import ipdb; ipdb.set_trace()
         workgraph_task.inputs.filenames.value = filenames
-        # import ipdb; ipdb.set_trace()
 
     def run(
         self,
         inputs: None | dict[str, Any] = None,
         metadata: None | dict[str, Any] = None,
     ) -> aiida.orm.Node:
+        # import ipdb; ipdb.set_trace()
         self._workgraph.run(inputs=inputs, metadata=metadata)
         if (output_node := self._workgraph.process) is None:
             # The node should not be None after a run, it should contain exit code and message so if the node is None something internal went wrong
