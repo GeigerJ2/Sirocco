@@ -16,7 +16,9 @@ from sirocco import core
 if TYPE_CHECKING:
     from aiida_workgraph.socket import TaskSocket  # type: ignore[import-untyped]
 
-    WorkgraphDataNode: TypeAlias = aiida.orm.RemoteData | aiida.orm.SinglefileData | aiida.orm.FolderData
+    WorkgraphDataNode: TypeAlias = (
+        aiida.orm.RemoteData | aiida.orm.SinglefileData | aiida.orm.FolderData
+    )
 
 
 # This is a workaround required when splitting the initialization of the task and its linked nodes Merging this into
@@ -32,7 +34,15 @@ def _execute(self, engine_process, args=None, kwargs=None, var_kwargs=None):  # 
     # Workaround starts here
     # This part is part of the workaround. We need to manually add the outputs from the task.
     # Because kwargs are not populated with outputs
-    default_outputs = {"remote_folder", "remote_stash", "retrieved", "_outputs", "_wait", "stdout", "stderr"}
+    default_outputs = {
+        "remote_folder",
+        "remote_stash",
+        "retrieved",
+        "_outputs",
+        "_wait",
+        "stdout",
+        "stderr",
+    }
     task_outputs = set(self.outputs._sockets.keys())  # noqa SLF001 # there so public accessor
     task_outputs = task_outputs.union(set(inputs.pop("outputs", [])))
     missing_outputs = task_outputs.difference(default_outputs)
@@ -143,7 +153,8 @@ class AiidaWorkGraph:
         through the replacement of invalid chars in the coordinates duplication can happen but it is unlikely.
         """
         return cls.replace_invalid_chars_in_label(
-            f"{obj.name}" + "__".join(f"_{key}_{value}" for key, value in obj.coordinates.items())
+            f"{obj.name}"
+            + "__".join(f"_{key}_{value}" for key, value in obj.coordinates.items())
         )
 
     @staticmethod
@@ -157,11 +168,17 @@ class AiidaWorkGraph:
     def label_placeholder(cls, data: core.Data) -> str:
         return f"{{{cls.get_aiida_label_from_graph_item(data)}}}"
 
-    def data_from_core(self, core_available_data: core.AvailableData) -> WorkgraphDataNode:
-        return self._aiida_data_nodes[self.get_aiida_label_from_graph_item(core_available_data)]
+    def data_from_core(
+        self, core_available_data: core.AvailableData
+    ) -> WorkgraphDataNode:
+        return self._aiida_data_nodes[
+            self.get_aiida_label_from_graph_item(core_available_data)
+        ]
 
     def socket_from_core(self, core_generated_data: core.GeneratedData) -> TaskSocket:
-        return self._aiida_socket_nodes[self.get_aiida_label_from_graph_item(core_generated_data)]
+        return self._aiida_socket_nodes[
+            self.get_aiida_label_from_graph_item(core_generated_data)
+        ]
 
     def task_from_core(self, core_task: core.Task) -> aiida_workgraph.Task:
         return self._aiida_task_nodes[self.get_aiida_label_from_graph_item(core_task)]
@@ -177,7 +194,11 @@ class AiidaWorkGraph:
         Create an `aiida.orm.Data` instance from the provided graph item.
         """
         label = self.get_aiida_label_from_graph_item(data)
-        data_full_path = data.src if data.src.is_absolute() else self._core_workflow.config_rootdir / data.src
+        data_full_path = (
+            data.src
+            if data.src.is_absolute()
+            else self._core_workflow.config_rootdir / data.src
+        )
 
         if data.computer is not None:
             try:
@@ -190,9 +211,13 @@ class AiidaWorkGraph:
                 remote_path=str(data.src), label=label, computer=computer
             )
         elif data.type == "file":
-            self._aiida_data_nodes[label] = aiida.orm.SinglefileData(label=label, file=data_full_path)
+            self._aiida_data_nodes[label] = aiida.orm.SinglefileData(
+                label=label, file=data_full_path
+            )
         elif data.type == "dir":
-            self._aiida_data_nodes[label] = aiida.orm.FolderData(label=label, tree=data_full_path)
+            self._aiida_data_nodes[label] = aiida.orm.FolderData(
+                label=label, tree=data_full_path
+            )
         else:
             msg = f"Data type {data.type!r} not supported. Please use 'file' or 'dir'."
             raise ValueError(msg)
@@ -231,7 +256,9 @@ class AiidaWorkGraph:
             else (task.config_rootdir / env_source_path)
             for env_source_file in task.env_source_files
         ]
-        prepend_text = "\n".join([f"source {env_source_path}" for env_source_path in env_source_paths])
+        prepend_text = "\n".join(
+            [f"source {env_source_path}" for env_source_path in env_source_paths]
+        )
         metadata["options"] = {"prepend_text": prepend_text}
         # NOTE: Hardcoded for now, possibly make user-facing option
         metadata["options"]["use_symlinks"] = True
@@ -299,7 +326,9 @@ class AiidaWorkGraph:
     def _link_wait_on_to_task(self, task: core.Task):
         """link wait on tasks to workgraph task"""
 
-        self.task_from_core(task).wait = [self.task_from_core(wt) for wt in task.wait_on]
+        self.task_from_core(task).wait = [
+            self.task_from_core(wt) for wt in task.wait_on
+        ]
 
     def _set_shelljob_arguments(self, task: core.ShellTask):
         """Set AiiDA ShellJob arguments by replacing port placeholders with AiiDA labels."""
@@ -326,7 +355,6 @@ class AiidaWorkGraph:
         _, arguments = self.split_cmd_arg(task.resolve_ports(input_labels))
         workgraph_task_arguments.value = arguments
 
-
     def _set_shelljob_filenames(self, task: core.ShellTask):
         """Set AiiDA ShellJob filenames for data entities, including parameterized data."""
         filenames = {}
@@ -338,7 +366,11 @@ class AiidaWorkGraph:
         for input_ in task.input_data_nodes():
             input_label = self.get_aiida_label_from_graph_item(input_)
 
-            if task.computer and input_.computer and isinstance(input_, core.AvailableData):
+            if (
+                task.computer
+                and input_.computer
+                and isinstance(input_, core.AvailableData)
+            ):
                 # For RemoteData on the same computer, use just the filename
                 filename = Path(input_.src).name
                 filenames[input_.name] = filename
@@ -348,7 +380,9 @@ class AiidaWorkGraph:
                 # coordinates need unique filenames to avoid conflicts in the working directory
 
                 # Count how many inputs have the same base name
-                same_name_count = sum(1 for inp in task.input_data_nodes() if inp.name == input_.name)
+                same_name_count = sum(
+                    1 for inp in task.input_data_nodes() if inp.name == input_.name
+                )
 
                 if same_name_count > 1:
                     # Multiple data nodes with same base name - use full label as filename
@@ -356,13 +390,14 @@ class AiidaWorkGraph:
                     filename = input_label
                 else:
                     # Single data node with this name - can use simple filename
-                    filename = Path(input_.src).name if hasattr(input_, 'src') else input_.name
+                    filename = (
+                        Path(input_.src).name if hasattr(input_, "src") else input_.name
+                    )
 
                 # The key in filenames dict should be the input label (what's used in nodes dict)
                 filenames[input_label] = filename
 
         workgraph_task.inputs.filenames.value = filenames
-
 
     def run(
         self,
@@ -385,7 +420,9 @@ class AiidaWorkGraph:
         timeout: int = 60,
         metadata: None | dict[str, Any] = None,
     ) -> aiida.orm.Node:
-        self._workgraph.submit(inputs=inputs, wait=wait, timeout=timeout, metadata=metadata)
+        self._workgraph.submit(
+            inputs=inputs, wait=wait, timeout=timeout, metadata=metadata
+        )
         if (output_node := self._workgraph.process) is None:
             # The node should not be None after a run, it should contain exit code and message so if the node is None something internal went wrong
             msg = "Something went wrong when running workgraph. Please contact a developer."
