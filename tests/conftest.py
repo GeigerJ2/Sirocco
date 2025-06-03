@@ -21,7 +21,7 @@ class DownloadError(RuntimeError):
 
 
 def download_file(url: str, file_path: pathlib.Path):
-    response = requests.get(url)
+    response = requests.get(url)  # noqa: S113
     if not response.ok:
         raise DownloadError(url, response)
 
@@ -48,7 +48,7 @@ def icon_grid_simple_path(pytestconfig):
 
 @pytest.fixture
 def icon_filepath_executable() -> str:
-    which_icon = subprocess.run(["which", "icon"], capture_output=True, check=False)
+    which_icon = subprocess.run(["which", "icon"], capture_output=True, check=False)  # noqa: S607
     if which_icon.returncode:
         msg = "Could not find icon executable."
         raise FileNotFoundError(msg)
@@ -99,7 +99,11 @@ def minimal_invert_task_io_config() -> models.ConfigWorkflow:
         ],
         data=models.ConfigData(
             available=[
-                models.ConfigAvailableData(name="availalble", type=models.DataType.FILE, src=pathlib.Path("foo.txt"))
+                models.ConfigAvailableData(
+                    name="availalble",
+                    type=models.DataType.FILE,
+                    src=pathlib.Path("foo.txt"),
+                )
             ],
             generated=[
                 models.ConfigGeneratedData(name="output_a", type=models.DataType.DIR, src=pathlib.Path("bar")),
@@ -154,7 +158,7 @@ def serialize_nml(config_paths: dict[str, pathlib.Path], workflow: workflow.Work
 
 def pytest_configure(config):
     if config.getoption("reserialize"):
-        print("Regenerating serialized references")  # noqa: T201 # this is actual UX, not a debug print
+        print("Regenerating serialized references")  # this is actual UX, not a debug print
         for config_case in ALL_CONFIG_CASES:
             config_paths = generate_config_paths(config_case)
             wf = workflow.Workflow.from_config_file(str(config_paths["yml"]))
