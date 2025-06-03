@@ -47,13 +47,11 @@ data:
   available:
      - icon_namelist:
          type: file
-         src: /home/geiger_j/aiida_projects/swiss-twins/git-repos/Sirocco/tests/cases/small/config/data/input
-        #  src: data/input  # This is the original code
+         src: data/input
      - initial_conditions:
          type: file
          computer: localhost
-         src: /home/geiger_j/aiida_projects/swiss-twins/git-repos/Sirocco/tests/cases/small/config/data/initial_conditions
-        #  src: data/initial_conditions  # This is the original code
+         src: data/initial_conditions
   generated:
      - icon_output:
          type: file
