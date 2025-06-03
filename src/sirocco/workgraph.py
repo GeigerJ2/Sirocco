@@ -375,16 +375,6 @@ class AiidaWorkGraph:
                 # The key in filenames dict should be the input label (what's used in nodes dict)
                 filenames[input_label] = filename
 
-        # Handle output files
-        for output in task.output_data_nodes():
-            output_label = self.get_aiida_label_from_graph_item(output)
-
-            # For outputs, we always use the original src filename
-            # The script should create files with these names, and AiiDA will retrieve them
-            # Parameterization conflicts are handled later when files are copied/symlinked for analysis
-            output_filename = Path(output.src).name
-            filenames[output_label] = output_filename
-
         workgraph_task.inputs.filenames.value = filenames
 
     def run(
