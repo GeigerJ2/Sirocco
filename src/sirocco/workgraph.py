@@ -342,6 +342,7 @@ class AiidaWorkGraph:
         if not workgraph_task.inputs.filenames:
             return
 
+        # Handle input files
         for input_ in task.input_data_nodes():
             input_label = self.get_aiida_label_from_graph_item(input_)
 
@@ -368,7 +369,53 @@ class AiidaWorkGraph:
                 # The key in filenames dict should be the input label (what's used in nodes dict)
                 filenames[input_label] = filename
 
+        # Handle output files
+        for output in task.output_data_nodes():
+            output_label = self.get_aiida_label_from_graph_item(output)
+
+            # For outputs, we always use the original src filename
+            # The script should create files with these names, and AiiDA will retrieve them
+            # Parameterization conflicts are handled later when files are copied/symlinked for analysis
+            output_filename = Path(output.src).name
+            filenames[output_label] = output_filename
+
         workgraph_task.inputs.filenames.value = filenames
+
+    # def _set_shelljob_filenames(self, task: core.ShellTask):
+    #     """Set AiiDA ShellJob filenames for data entities, including parameterized data."""
+    #     filenames = {}
+    #     workgraph_task = self.task_from_core(task)
+
+    #     if not workgraph_task.inputs.filenames:
+    #         return
+
+    #     for input_ in task.input_data_nodes():
+    #         input_label = self.get_aiida_label_from_graph_item(input_)
+
+    #         if task.computer and input_.computer and isinstance(input_, core.AvailableData):
+    #             # For RemoteData on the same computer, use just the filename
+    #             filename = Path(input_.src).name
+    #             filenames[input_.name] = filename
+    #         else:
+    #             # For other cases (including GeneratedData), we need to handle parameterized data
+    #             # Importantly, multiple data nodes with the same base name but different
+    #             # coordinates need unique filenames to avoid conflicts in the working directory
+
+    #             # Count how many inputs have the same base name
+    #             same_name_count = sum(1 for inp in task.input_data_nodes() if inp.name == input_.name)
+
+    #             if same_name_count > 1:
+    #                 # Multiple data nodes with same base name - use full label as filename
+    #                 # to ensure uniqueness in working directory
+    #                 filename = input_label
+    #             else:
+    #                 # Single data node with this name - can use simple filename
+    #                 filename = Path(input_.src).name if hasattr(input_, "src") else input_.name
+
+    #             # The key in filenames dict should be the input label (what's used in nodes dict)
+    #             filenames[input_label] = filename
+
+    #     workgraph_task.inputs.filenames.value = filenames
 
     def run(
         self,

@@ -36,7 +36,7 @@ dependencies = [
   "pygraphviz",
   "lxml",
   "f90nml",
-  "aiida-shell @ git+https://github.com/sphuber/aiida-shell.git@master",
+  "aiida-shell>=0.8.1",
 ]
 license = {file = "LICENSE"}
 
