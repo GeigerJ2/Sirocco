@@ -182,7 +182,9 @@ NAMED_BASE_T = typing.TypeVar("NAMED_BASE_T", bound=_NamedBaseModel)
 def make_named_model_list_converter(
     cls: type[NAMED_BASE_T],
 ) -> typing.Callable[[list[NAMED_BASE_T | str | dict] | None], list[NAMED_BASE_T]]:
-    def convert_named_model_list(values: list[NAMED_BASE_T | str | dict] | None) -> list[NAMED_BASE_T]:
+    def convert_named_model_list(
+        values: list[NAMED_BASE_T | str | dict] | None,
+    ) -> list[NAMED_BASE_T]:
         inputs: list[NAMED_BASE_T] = []
         if values is None:
             return inputs
@@ -207,13 +209,16 @@ class ConfigCycleTask(_NamedBaseModel):
     """
 
     inputs: Annotated[
-        list[ConfigCycleTaskInput], BeforeValidator(make_named_model_list_converter(ConfigCycleTaskInput))
+        list[ConfigCycleTaskInput],
+        BeforeValidator(make_named_model_list_converter(ConfigCycleTaskInput)),
     ] = []
     outputs: Annotated[
-        list[ConfigCycleTaskOutput], BeforeValidator(make_named_model_list_converter(ConfigCycleTaskOutput))
+        list[ConfigCycleTaskOutput],
+        BeforeValidator(make_named_model_list_converter(ConfigCycleTaskOutput)),
     ] = []
     wait_on: Annotated[
-        list[ConfigCycleTaskWaitOn], BeforeValidator(make_named_model_list_converter(ConfigCycleTaskWaitOn))
+        list[ConfigCycleTaskWaitOn],
+        BeforeValidator(make_named_model_list_converter(ConfigCycleTaskWaitOn)),
     ] = []
 
 
@@ -706,7 +711,7 @@ class ConfigWorkflow(BaseModel):
         return adapter.validate_python(object_)
 
     @classmethod
-    def from_yaml_str(cls, yaml_content: str, name: str = None, rootdir: Path = None) -> Self:
+    def from_yaml_str(cls, yaml_content: str, name: str | None = None, rootdir: Path | None = None) -> Self:
         """Creates a Workflow instance from a YAML string.
 
         Args:
@@ -741,9 +746,7 @@ class ConfigWorkflow(BaseModel):
 
             >>> # Test with explicit rootdir
             >>> wf_with_rootdir = ConfigWorkflow.from_yaml_str(
-            ...     yaml_content,
-            ...     name="test_workflow",
-            ...     rootdir=Path("/tmp")
+            ...     yaml_content, name="test_workflow", rootdir=Path("/tmp")
             ... )
             >>> wf_with_rootdir.rootdir
             PosixPath('/tmp')
@@ -800,7 +803,6 @@ class ConfigWorkflow(BaseModel):
 
         adapter = TypeAdapter(cls)
         return adapter.validate_python(object_)
-
 
 
 OBJECT_T = typing.TypeVar("OBJECT_T")
