@@ -195,7 +195,7 @@ class AiidaWorkGraph:
                 raise ValueError(msg) from err
             # `remote_path` must be str not PosixPath to be JSON-serializable
             # PRCOMMENT: Hack for now to make the tests pass
-            if computer.label == 'localhost':
+            if computer.label == "localhost":
                 self._aiida_data_nodes[label] = aiida.orm.RemoteData(
                     remote_path=str(data_full_path), label=label, computer=computer
                 )
