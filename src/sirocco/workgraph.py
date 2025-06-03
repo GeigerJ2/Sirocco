@@ -14,6 +14,7 @@ from sirocco import core
 
 if TYPE_CHECKING:
     from aiida_workgraph.socket import TaskSocket  # type: ignore[import-untyped]
+    from aiida_workgraph.sockets.builtins import SocketAny
 
     WorkgraphDataNode: TypeAlias = aiida.orm.RemoteData | aiida.orm.SinglefileData | aiida.orm.FolderData
 
@@ -311,7 +312,7 @@ class AiidaWorkGraph:
     def _set_shelljob_arguments(self, task: core.ShellTask):
         """Set AiiDA ShellJob arguments by replacing port placeholders with AiiDA labels."""
         workgraph_task = self.task_from_core(task)
-        workgraph_task_arguments = workgraph_task.inputs.arguments
+        workgraph_task_arguments: SocketAny = workgraph_task.inputs.arguments
 
         if workgraph_task_arguments is None:
             msg = (
@@ -374,7 +375,6 @@ class AiidaWorkGraph:
         inputs: None | dict[str, Any] = None,
         metadata: None | dict[str, Any] = None,
     ) -> aiida.orm.Node:
-        # import ipdb; ipdb.set_trace()
         self._workgraph.run(inputs=inputs, metadata=metadata)
         if (output_node := self._workgraph.process) is None:
             # The node should not be None after a run, it should contain exit code and message so if the node is None something internal went wrong

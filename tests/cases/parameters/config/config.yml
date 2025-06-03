@@ -1,3 +1,4 @@
+---
 start_date: &root_start_date "2026-01-01T00:00"
 stop_date: &root_stop_date "2028-01-01T00:00"
 
@@ -55,9 +56,10 @@ cycles:
 tasks:
   - icon:
       plugin: shell
-      # For relative path execpt if this cannot be resolved to a registered code
-      # Probably shouldn't enforce to absolute path; or provide a code argument instead, this should be
-      # unambigous
+      # PRCOMMENT
+      # Relative path -> except if this cannot be resolved to a registered code
+      # Probably either enforce absolute path, or provide a code argument
+      # See: https://github.com/C2SM/Sirocco/pull/153
       src: scripts/icon.py
       command: "icon.py --restart {PORT::restart} --init {PORT::init} --forcing {PORT::forcing}"
       parameters: [foo, bar]

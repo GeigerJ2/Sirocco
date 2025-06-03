@@ -21,7 +21,7 @@ class DownloadError(RuntimeError):
 
 
 def download_file(url: str, file_path: pathlib.Path):
-    response = requests.get(url)  # noqa: S113
+    response = requests.get(url)  # noqa: S113 request-without-timeout
     if not response.ok:
         raise DownloadError(url, response)
 
@@ -87,7 +87,7 @@ def minimal_invert_task_io_config() -> models.ConfigWorkflow:
                     ),
                     models.ConfigCycleTask(
                         name="task_a",
-                        inputs=[models.ConfigCycleTaskInput(name="availalble", port="None")],
+                        inputs=[models.ConfigCycleTaskInput(name="available", port="None")],
                         outputs=[models.ConfigCycleTaskOutput(name="output_a")],
                     ),
                 ],
@@ -100,7 +100,7 @@ def minimal_invert_task_io_config() -> models.ConfigWorkflow:
         data=models.ConfigData(
             available=[
                 models.ConfigAvailableData(
-                    name="availalble",
+                    name="available",
                     type=models.DataType.FILE,
                     src=pathlib.Path("foo.txt"),
                 )
