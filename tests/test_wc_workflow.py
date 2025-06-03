@@ -32,7 +32,7 @@ def test_icon():
 
 # configs that are tested for running workgraph
 @pytest.mark.slow
-@pytest.mark.usefixtures('aiida_localhost')
+@pytest.mark.usefixtures("aiida_localhost")
 @pytest.mark.parametrize(
     "config_case",
     [
@@ -50,7 +50,6 @@ def test_run_workgraph(config_case, config_paths):  # noqa: ARG001  # config_cas
     core_workflow = Workflow.from_config_file(str(config_paths["yml"]))
     aiida_workflow = AiidaWorkGraph(core_workflow)
     output_node = aiida_workflow.run()
-    import ipdb; ipdb.set_trace()
     assert (
         output_node.is_finished_ok
     ), f"Not successful run. Got exit code {output_node.exit_code} with message {output_node.exit_message}."
