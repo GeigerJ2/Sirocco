@@ -713,7 +713,7 @@ class ConfigWorkflow(BaseModel):
         object_["rootdir"] = config_resolved_path.parent
         adapter = TypeAdapter(cls)
         return adapter.validate_python(object_)
-    
+
     @classmethod
     def from_yaml_str(cls, yaml_content: str, name: str = None, rootdir: Path = None) -> Self:
         """Creates a Workflow instance from a YAML string.
@@ -730,17 +730,17 @@ class ConfigWorkflow(BaseModel):
         if yaml_content.strip() == "":
             msg = "YAML content is empty."
             raise ValueError(msg)
-        
+
         reader = YAML(typ="safe", pure=True)
         object_ = reader.load(StringIO(yaml_content))
-        
+
         # Set name if not specified in YAML
         if "name" not in object_:
             object_["name"] = name or "workflow"
-        
+
         # Set rootdir if not specified
         object_["rootdir"] = rootdir or Path.cwd()
-        
+
         adapter = TypeAdapter(cls)
         return adapter.validate_python(object_)
 

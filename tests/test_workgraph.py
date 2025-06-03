@@ -1,8 +1,9 @@
-import pytest
-from aiida import orm
 import textwrap
 
-from sirocco.core import Workflow, GeneratedData
+import pytest
+from aiida import orm
+
+from sirocco.core import GeneratedData, Workflow
 from sirocco.parsing import yaml_data_models as models
 from sirocco.workgraph import AiidaWorkGraph
 
