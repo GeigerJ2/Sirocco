@@ -705,6 +705,103 @@ class ConfigWorkflow(BaseModel):
         adapter = TypeAdapter(cls)
         return adapter.validate_python(object_)
 
+    @classmethod
+    def from_yaml_str(cls, yaml_content: str, name: str = None, rootdir: Path = None) -> Self:
+        """Creates a Workflow instance from a YAML string.
+
+        Args:
+            yaml_content: The YAML content as a string.
+            name: The name for the workflow. If not provided, defaults to "workflow".
+            rootdir: The root directory for the workflow. Defaults to current directory.
+
+        Returns:
+            OBJECT_T: An instance of the specified class type with data parsed and
+            validated from the YAML content.
+
+        Examples:
+            >>> import textwrap
+            >>> yaml_content = textwrap.dedent('''
+            ...     cycles:
+            ...       - minimal_cycle:
+            ...           tasks:
+            ...             - task_a:
+            ...     tasks:
+            ...       - task_a:
+            ...           plugin: shell
+            ...           command: "echo hello"
+            ...     data:
+            ...       available: []
+            ...       generated: []
+            ... ''')
+            >>> wf = ConfigWorkflow.from_yaml_str(yaml_content, name="test_workflow")
+            >>> wf.name
+            'test_workflow'
+            >>> wf.rootdir == Path.cwd()
+            True
+
+            >>> # Test with explicit rootdir
+            >>> wf_with_rootdir = ConfigWorkflow.from_yaml_str(
+            ...     yaml_content,
+            ...     name="test_workflow",
+            ...     rootdir=Path("/tmp")
+            ... )
+            >>> wf_with_rootdir.rootdir
+            PosixPath('/tmp')
+
+            >>> # Test with name in YAML (should override parameter)
+            >>> yaml_with_name = textwrap.dedent('''
+            ...     name: yaml_name
+            ...     cycles:
+            ...       - minimal_cycle:
+            ...           tasks:
+            ...             - task_a:
+            ...     tasks:
+            ...       - task_a:
+            ...           plugin: shell
+            ...           command: "echo hello"
+            ...     data:
+            ...       available: []
+            ...       generated: []
+            ... ''')
+            >>> wf_yaml_name = ConfigWorkflow.from_yaml_str(yaml_with_name, name="param_name")
+            >>> wf_yaml_name.name
+            'yaml_name'
+
+            >>> # Test default name when none provided
+            >>> wf_default = ConfigWorkflow.from_yaml_str(yaml_content)
+            >>> wf_default.name
+            'workflow'
+
+            >>> # Test empty YAML raises ValueError
+            >>> ConfigWorkflow.from_yaml_str("")
+            Traceback (most recent call last):
+            ...
+            ValueError: YAML content is empty.
+
+            >>> # Test whitespace-only YAML raises ValueError
+            >>> ConfigWorkflow.from_yaml_str("   \\n  \\t  ")
+            Traceback (most recent call last):
+            ...
+            ValueError: YAML content is empty.
+        """
+        if yaml_content.strip() == "":
+            msg = "YAML content is empty."
+            raise ValueError(msg)
+
+        reader = YAML(typ="safe", pure=True)
+        object_ = reader.load(StringIO(yaml_content))
+
+        # Set name if not specified in YAML
+        if "name" not in object_:
+            object_["name"] = name or "workflow"
+
+        # Set rootdir if not specified
+        object_["rootdir"] = rootdir or Path.cwd()
+
+        adapter = TypeAdapter(cls)
+        return adapter.validate_python(object_)
+
+
 
 OBJECT_T = typing.TypeVar("OBJECT_T")
 
