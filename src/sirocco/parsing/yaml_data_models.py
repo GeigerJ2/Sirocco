@@ -714,36 +714,6 @@ class ConfigWorkflow(BaseModel):
         adapter = TypeAdapter(cls)
         return adapter.validate_python(object_)
 
-    @classmethod
-    def from_yaml_str(cls, yaml_content: str, name: str = None, rootdir: Path = None) -> Self:
-        """Creates a Workflow instance from a YAML string.
-
-        Args:
-            yaml_content (str): The YAML content as a string.
-            name (str, optional): The name for the workflow. If not provided, defaults to "workflow".
-            rootdir (Path, optional): The root directory for the workflow. Defaults to current directory.
-
-        Returns:
-            OBJECT_T: An instance of the specified class type with data parsed and
-            validated from the YAML content.
-        """
-        if yaml_content.strip() == "":
-            msg = "YAML content is empty."
-            raise ValueError(msg)
-
-        reader = YAML(typ="safe", pure=True)
-        object_ = reader.load(StringIO(yaml_content))
-
-        # Set name if not specified in YAML
-        if "name" not in object_:
-            object_["name"] = name or "workflow"
-
-        # Set rootdir if not specified
-        object_["rootdir"] = rootdir or Path.cwd()
-
-        adapter = TypeAdapter(cls)
-        return adapter.validate_python(object_)
-
 
 OBJECT_T = typing.TypeVar("OBJECT_T")
 

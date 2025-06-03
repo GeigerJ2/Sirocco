@@ -36,7 +36,7 @@ dependencies = [
   "pygraphviz",
   "lxml",
   "f90nml",
-  "aiida-shell @ git+https://github.com/sphuber/aiida-shell.git@fix/105/handle-remote-data-argument-placeholders",
+  "aiida-shell @ git+https://github.com/sphuber/aiida-shell.git@master",
 ]
 license = {file = "LICENSE"}
 
